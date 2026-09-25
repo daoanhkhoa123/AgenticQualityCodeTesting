@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pydantic import BaseModel
 from typing import Optional, Literal
 
@@ -22,6 +21,5 @@ PROCESS_STATE = Literal["parsing", "parsing_done"]
 AUTOMATIC_FILL_STORY_STATE = ["name", "description", "test_description", "acceptance_criteria", "techinal_description"]
 
 
-@dataclass
-class StoryAgentContext:
+class StoryAgentContext(BaseModel):
     llm: BaseChatModel
