@@ -1,0 +1,3 @@
+As a player, I want to be able to open a leaderboard that shows all players ranked by how much money they have, so that I can see how my progress compares to everyone else who has played the game.
+
+When I click the "Leaderboard" button from the main menu, a window should pop up showing a table of players sorted from highest money to lowest, with each row numbered by rank starting at 1. If I already have the leaderboard open and click the button again, it shouldn't open a second window on top of it. And if there's no save data yet, the leaderboard should still open normally, just without any rows, instead of crashing the game.
