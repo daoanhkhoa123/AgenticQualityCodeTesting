@@ -5,12 +5,15 @@ from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgen
 from agentic_code_testing.agents.user_story_agent.tools.read_file import read_file
 from agentic_code_testing.agents.user_story_agent.tools.parse_text_body import parse_re_story_file
 
+NOT_FOUND_TOKEN = r"not_found"
+
 PARSING_FIELD_PROMPT = """Extract from body, the field {field}
 ---
 {body}
 ---
-only return value of field, if not found, return explicitly
-<Not found>"""
+only return value of field, if not found, return explicitly `{not_found_token}`""".format(**{"not_found_token": NOT_FOUND_TOKEN, 
+     "field":"{field}",
+    "body":"{body}"})
 
 prompt_template = PromptTemplate.from_template(PARSING_FIELD_PROMPT)
 
