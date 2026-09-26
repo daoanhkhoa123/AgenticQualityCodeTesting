@@ -4,8 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.language_models.chat_models import BaseChatModel
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentState
 
-
-ScenarioCategory = Literal["happy_path", "edge_case", "negative_case"]
+ScenarioCategory = Literal["happy path", "edge case", "negative case"]
 Priority = Literal["P0", "P1", "P2"]
 TestType = Literal["unit", "integration", "e2e"]
 
@@ -26,13 +25,24 @@ class Scenario(BaseModel):
     expected_result: str
 
 
-class PlannerAgentState(BaseModel):
-    current_ac: str
-    scenarios: list[Scenario] = Field(default_factory=list)
+class ScenarioGenResult(BaseModel):
+    scenario: Optional[Scenario]
+    is_category_covered: bool
+    coverage_reasoning: str
 
-    acs: list[str] = Field(default_factory=list, description="List of extracted acceptance criteria string")
+
+class PlannerAgentState(BaseModel):
+    scenarios: list[Scenario] = Field(default_factory=list)
+    current_category: Optional[ScenarioCategory] = None
+
+    is_category_covered: bool
+    coverage_reasoning: str
+
+    ac_idx: int = -1
+    senarios_idx: int = -1
 
 
 class PlannerAgentContext(BaseModel):
     llm: BaseChatModel
-    user_story: StoryAgentState
+    user_story: StoryAgentState = Field(description="Current acceptance criteria solving")
+    acs: list[str] = Field(default_factory=list, description="List of acceptance criteria")
