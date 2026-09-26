@@ -1,17 +1,16 @@
 from agentic_code_testing.agents.user_story_agent.nodes.parsing_nodes import NOT_FOUND_TOKEN
 from agentic_code_testing.agents.planner_agent.extract_ac_agent.typed_schemas import ExtractACAgentState, HumanReviewDecision
+from agentic_code_testing.agents.planner_agent.typed_schemas import PlannerAgentContext
 from typing import Literal
 
+from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 
 ASK_HUMAN_FLAG = Literal["ask_human", "go_end"]
 HUMAN_DECISION = Literal["accepted", "rejected"]
 
-def remove_story_body(state:ExtractACAgentState) -> dict:
-    return {"user_story": state.user_story.model_copy(update={"story_body": ""})}
-
-def should_ask_human(state:ExtractACAgentState) -> ASK_HUMAN_FLAG:
-    if state.user_story.acceptance_criteria == NOT_FOUND_TOKEN:
+def should_ask_human(state: ExtractACAgentState, runtime: Runtime[PlannerAgentContext]) -> ASK_HUMAN_FLAG:
+    if runtime.context.user_story.acceptance_criteria == NOT_FOUND_TOKEN:
         return "ask_human"
     return "go_end"
 

@@ -1,4 +1,4 @@
-from agentic_code_testing.agents.planner_agent.extract_ac_agent.nodes import remove_story_body, should_ask_human, asking_human, route_after_human
+from agentic_code_testing.agents.planner_agent.extract_ac_agent.nodes import should_ask_human, asking_human, route_after_human
 from agentic_code_testing.agents.planner_agent.extract_ac_agent.typed_schemas import ExtractACAgentState
 from agentic_code_testing.agents.planner_agent.typed_schemas import PlannerAgentContext
 from agentic_code_testing.agents.planner_agent.extract_ac_agent.extract_dimiliter_agent import extract_ac_node
@@ -6,12 +6,10 @@ from langgraph.graph import StateGraph, START, END
 
 builder = StateGraph(ExtractACAgentState, context_schema=PlannerAgentContext)
 
-builder.add_node("remove_story_body", remove_story_body)
 builder.add_node("extract_ac_agent", extract_ac_node)
 builder.add_node("asking_human", asking_human)
 
-builder.add_edge(START, "remove_story_body")
-builder.add_edge("remove_story_body", "extract_ac_agent")
+builder.add_edge(START, "extract_ac_agent")
 builder.add_conditional_edges(
     "extract_ac_agent",
     should_ask_human,

@@ -46,7 +46,7 @@ def create_extract_ac_agent(llm: BaseChatModel):
 def extract_ac_node(state: ExtractACAgentState, runtime: Runtime[PlannerAgentContext]) -> dict:
     agent = create_extract_ac_agent(runtime.context.llm)
 
-    messages = [HumanMessage(content=state.user_story.acceptance_criteria)]
+    messages = [HumanMessage(content=runtime.context.user_story.acceptance_criteria)]
     if state.human_feedback:
         messages.append(HumanMessage(content=(
             f"Your previous extraction was: {state.acs}\n"

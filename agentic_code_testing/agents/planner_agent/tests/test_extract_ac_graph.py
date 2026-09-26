@@ -17,24 +17,23 @@ BULLETED_AC = (
 
 def test_extract_ac_graph_ends_when_criteria_found():
     user_story = MOCK_STORY_AGENT_STATE.model_copy(update={"acceptance_criteria": BULLETED_AC})
-    state = ExtractACAgentState(user_story=user_story)
-    result = extract_ac_graph.invoke(state, context=PlannerAgentContext(llm=llm))
+    state = ExtractACAgentState()
+    result = extract_ac_graph.invoke(state, context=PlannerAgentContext(llm=llm, user_story=user_story))
 
     assert "__interrupt__" not in result, "criteria was found, so no human review should be needed"
     assert result["acs"], "acs should be populated by extract_ac_agent"
-    assert result["user_story"].story_body == "", "story_body should be cleared to save context"
 
-    for ac in result["acs"]:
-        print(f"- {ac}")
+    print(f"acs:\n{result['acs']}\n")
 
 
 def test_extract_ac_graph_human_review_loop():
     graph = builder.compile(checkpointer=InMemorySaver())
     config = {"configurable": {"thread_id": "extract-ac-human-review-test"}}
-    context = PlannerAgentContext(llm=llm)
 
     user_story = MOCK_STORY_AGENT_STATE.model_copy(update={"acceptance_criteria": NOT_FOUND_TOKEN})
-    state = ExtractACAgentState(user_story=user_story)
+    context = PlannerAgentContext(llm=llm, user_story=user_story)
+
+    state = ExtractACAgentState()
     result = graph.invoke(state, config=config, context=context)
 
     assert "__interrupt__" in result, "criteria was not found, so the graph should pause for human review"

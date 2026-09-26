@@ -15,8 +15,7 @@ Done — once every AC has been visited, route_after_select returns "planning_do
 ---
 
 Extractr accpetance critera agent:
-Given a user story state:
-- remove story body to save context (becaseu other field is extractred from this anyway)
+Given a user story (read-only, passed via context not state):
 - llm tries to write accpetance criteas in a certan format (- a, - b, bullet point style)
 - if accpeatnce critea is found from input, then END return the list of accpetance critearia
 - if accpectance critera is not found from the input, then it should ask human it accpet this criteria
