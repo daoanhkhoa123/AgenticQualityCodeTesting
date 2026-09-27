@@ -1,4 +1,4 @@
-from agentic_code_testing.agents.codetest_writer_agent.static_analysis import (
+from agentic_code_testing.agents.codetest_writer_agent.utils.static_analysis import (
     extract_file_path_from_answer,
     extract_module_info,
     find_related_test_files,

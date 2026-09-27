@@ -3,7 +3,7 @@ from typing import Literal
 from langchain_core.prompts import PromptTemplate
 from langgraph.runtime import Runtime
 
-from agentic_code_testing.agents.codetest_writer_agent.structured_output import invoke_structured
+from agentic_code_testing.agents.codetest_writer_agent.utils.structured_output import invoke_structured
 from agentic_code_testing.agents.codetest_writer_agent.typed_schemas import (
     CodeTestWriterContext,
     CodeTestWriterState,

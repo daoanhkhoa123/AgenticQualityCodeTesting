@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-from agentic_code_testing.agents.codetest_writer_agent.pytest_runner import (
+from agentic_code_testing.agents.codetest_writer_agent.utils.pytest_runner import (
     _detect_venv_python,
     clear_stale_scratch,
     run_pytest_on_code,
@@ -95,7 +95,7 @@ def test_run_pytest_on_code_uses_detected_venv_python(tmp_path, monkeypatch):
         return subprocess.CompletedProcess(argv, returncode=0, stdout="", stderr="")
 
     monkeypatch.setattr(
-        "agentic_code_testing.agents.codetest_writer_agent.pytest_runner.subprocess.run", fake_run
+        "agentic_code_testing.agents.codetest_writer_agent.utils.pytest_runner.subprocess.run", fake_run
     )
 
     run_pytest_on_code("def test_ok():\n    assert True\n", "venv-scenario", 0, tmp_path, SCRATCH_DIR_NAME, timeout=30)
@@ -111,7 +111,7 @@ def test_run_pytest_on_code_falls_back_to_sys_executable_without_venv(tmp_path, 
         return subprocess.CompletedProcess(argv, returncode=0, stdout="", stderr="")
 
     monkeypatch.setattr(
-        "agentic_code_testing.agents.codetest_writer_agent.pytest_runner.subprocess.run", fake_run
+        "agentic_code_testing.agents.codetest_writer_agent.utils.pytest_runner.subprocess.run", fake_run
     )
 
     run_pytest_on_code("def test_ok():\n    assert True\n", "no-venv-scenario", 0, tmp_path, SCRATCH_DIR_NAME, timeout=30)

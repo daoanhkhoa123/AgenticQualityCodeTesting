@@ -29,7 +29,7 @@ Per scenario:
    -- a coarse keyword/pattern blocklist (filesystem deletion, network access,
    process/dynamic-code execution). If it matches, the draft is never written to
    disk or executed; the scenario goes straight to `finalize` as `blocked`.
-   Otherwise it runs via `pytest_runner.run_pytest_on_code`: a `subprocess` call
+   Otherwise it runs via `utils/pytest_runner.run_pytest_on_code`: a `subprocess` call
    to `python -m pytest`, using the target's own `.venv` interpreter if
    `root_dir` has a `uv`-managed one (`.venv/Scripts/python.exe` or
    `.venv/bin/python`), falling back to the agent's own `sys.executable`

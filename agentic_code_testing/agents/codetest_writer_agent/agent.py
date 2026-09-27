@@ -6,7 +6,7 @@ from typing import Callable, Optional
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
-from agentic_code_testing.agents.codetest_writer_agent.pytest_runner import clear_stale_scratch
+from agentic_code_testing.agents.codetest_writer_agent.utils.pytest_runner import clear_stale_scratch
 from agentic_code_testing.agents.codetest_writer_agent.typed_schemas import (
     CodeTestWriterContext,
     CodeTestWriterState,
