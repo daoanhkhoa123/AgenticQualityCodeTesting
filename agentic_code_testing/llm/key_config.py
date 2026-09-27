@@ -10,6 +10,7 @@ class _KeyConfig(BaseSettings):
     groq_api_key: str
     ollama_base_url: str
     ollama_model: str
+    ollama_timeout_seconds: float = 60.0
 
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,
