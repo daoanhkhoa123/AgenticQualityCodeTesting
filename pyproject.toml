@@ -1,7 +1,7 @@
 [project]
 name = "agenticqualitycodetesting"
 version = "0.1.0"
-description = "Add your description here"
+description = "yess "
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -10,6 +10,8 @@ dependencies = [
     "grandalf>=0.8",
     "langchain>=1.4.2",
     "langchain-groq>=1.1.3",
+    "langchain-mcp-adapters>=0.3.2",
+    "langchain-ollama>=1.1.0",
     "langgraph>=1.2.12",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
