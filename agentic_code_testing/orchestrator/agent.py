@@ -33,7 +33,7 @@ async def run_pipeline(
     logger.info("Starting pipeline for story_id=%s, file_path=%s", story_id, file_path)
 
     user_story = await ask_user_story_agent_async(file_path, story_id)
-    scenarios = await ask_planner_agent_async(user_story, output_dir, root_dir)
+    scenarios = await ask_planner_agent_async(user_story, output_dir, root_dir, max_acs=2)
     test_results = await ask_codetest_writer_agent_async(scenarios, output_dir, root_dir)
 
     result = PipelineResult(
