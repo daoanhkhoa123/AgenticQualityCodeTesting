@@ -1,7 +1,7 @@
 import logging
 import uuid
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Generator, Optional
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
@@ -33,6 +33,33 @@ def invoke_codetest_writer_agent(
     max_attempts: int = 3,
     code_context_resolver: Optional[Callable[[str], str]] = None,
 ) -> list[TestWriteResult]:
+    """Blocking wrapper over `iter_codetest_writer_agent_steps` for callers that
+    don't need to answer code-context questions across a network boundary
+    (tests, scripts) -- resolves each question in-process via
+    `code_context_resolver`."""
+    gen = iter_codetest_writer_agent_steps(llm, scenarios, file_writer, output_dir, root_dir, max_attempts)
+    answer = None
+    while True:
+        try:
+            question = gen.send(answer)
+        except StopIteration as done:
+            return done.value
+        answer = code_context_resolver(question) if code_context_resolver else "No code context available."
+
+
+def iter_codetest_writer_agent_steps(
+    llm,
+    scenarios: list[Scenario],
+    file_writer: BaseTestWriter,
+    output_dir,
+    root_dir: str,
+    max_attempts: int = 3,
+) -> Generator[str, str, list[TestWriteResult]]:
+    """Generator form of `invoke_codetest_writer_agent`: yields each
+    code-context question as it comes up and expects the answer sent back via
+    `.send()`, so a caller spanning multiple requests (an A2A executor) can
+    pause and resume this exact point instead of resolving it in-process.
+    Returns the final test-write-result list via `StopIteration.value`."""
     logger.info("Starting codetest writer agent for %d scenario(s)", len(scenarios))
 
     clear_stale_scratch(Path(root_dir).resolve(), DEFAULT_SCRATCH_DIR_NAME)
@@ -56,7 +83,7 @@ def invoke_codetest_writer_agent(
         rounds = 0
         while "__interrupt__" in result and rounds < MAX_CODE_CONTEXT_ROUNDS:
             question = result["__interrupt__"][0].value["question"]
-            answer = code_context_resolver(question) if code_context_resolver else "No code context available."
+            answer = yield question
             result = scenario_graph.invoke(Command(resume=answer), config=run_config, context=context)
             rounds += 1
 

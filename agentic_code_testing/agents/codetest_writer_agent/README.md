@@ -1,53 +1,38 @@
 # Codetest Writer Agent
 
-Consumes the `Scenario` list produced by `planner_agent` and, for each one, drafts
-a pytest test against a target codebase, runs it, and self-corrects.
+Consumes the `Scenario` list produced by `planner_agent` and, for each one,
+drafts a pytest test against a target codebase, runs it, and self-corrects.
 
-The core graph (`agent.py`/`write_one_scenario_agent`) never references
-`code_reader_agent` directly -- if a draft needs more information about the
-target codebase, it asks for it by suspending the graph, and whoever calls
-`invoke_codetest_writer_agent` decides how (or whether) that question gets
-answered via the `code_context_resolver` callback. This package's A2A wrapper
-(`agent_executor.py`) passes no resolver, so any such question falls back to
-"No code context available." -- wiring a real resolver (e.g. a direct A2A
-call to `code_reader_agent`) is the orchestrator's job, once
-`agentic_code_testing/orchestrator` implements it.
+This package is a logic wrapper around the
+[`write_one_scenario_agent`](write_one_scenario_agent/README.md) graph, which
+does the actual per-scenario drafting/running/retrying. `agent.py` compiles
+that graph once, loops it over the scenario list, and handles the
+interrupt/resume plumbing for code-context questions; `agent_executor.py`
+exposes that loop over A2A.
 
-Graph (`write_one_scenario_agent/graph.py`):
+The graph never references `code_reader_agent` directly -- if a draft needs
+more information about the target codebase, it asks for it by suspending
+itself, and `agent.py` exposes two ways to drive it end-to-end:
 
-![codetest_writer_once_scenario](../../../docs/codetest_writer_once_scenario.png)
+- `invoke_codetest_writer_agent(...)` -- blocking; resolves each question
+  in-process via a `code_context_resolver` callback (falling back to "No code
+  context available." if none is given).
+- `iter_codetest_writer_agent_steps(...)` -- a generator that `yield`s each
+  `code_context_question` and resumes on `.send(answer)`, letting a caller pause
+  and resume across a network boundary instead of resolving inline. `invoke_codetest_writer_agent`
+  is now just a thin blocking wrapper around this generator.
 
-Per scenario:
+This package's A2A wrapper (`agent_executor.py`) drives
+`iter_codetest_writer_agent_steps` directly: when a question comes up it
+surfaces the task as A2A input-required (`TaskUpdater.requires_input(...)`)
+and keeps the in-flight generator keyed by `task_id`, resuming it with
+`gen.send(answer)` once the next message for that task arrives with the
+answer. It still doesn't call `code_reader_agent` itself -- answering the
+question over a real A2A round trip (e.g. to `code_reader_agent`) is the
+orchestrator's job, once `agentic_code_testing/orchestrator` implements it;
+this executor only makes that hand-off possible.
 
-1. `draft_test` -- structured LLM output (`DraftedTest`) either produces a
-   complete pytest test file, or, if the code context so far is insufficient to
-   ground it in the real implementation, sets `code_context_question` instead of
-   guessing.
-2. If a question was asked, `request_code_context` suspends the graph with
-   `langgraph.types.interrupt(...)`. `invoke_codetest_writer_agent`'s driver loop
-   (`agent.py`) resumes it with an answer via `Command(resume=answer)`, taken from
-   whatever `code_context_resolver` callback the caller passed in; this node then
-   folds that answer into `code_context` and, if the answer names
-   a file it can resolve, re-runs stdlib `ast` (`static_analysis.py`) to refresh
-   `static_context` (signatures/docstrings/existing test files to reuse) before
-   looping back to `draft_test`.
-3. `run_drafted_test` first checks the draft against `guardrails.find_violations`
-   -- a coarse keyword/pattern blocklist (filesystem deletion, network access,
-   process/dynamic-code execution). If it matches, the draft is never written to
-   disk or executed; the scenario goes straight to `finalize` as `blocked`.
-   Otherwise it runs via `utils/pytest_runner.run_pytest_on_code`: a `subprocess` call
-   to `python -m pytest`, using the target's own `.venv` interpreter if
-   `root_dir` has a `uv`-managed one (`.venv/Scripts/python.exe` or
-   `.venv/bin/python`), falling back to the agent's own `sys.executable`
-   otherwise, in a scratch directory under the target `root_dir` (so the
-   target's own `conftest.py`/fixtures resolve), always cleaned up afterwards.
-4. On failure, `classify_failure` asks the LLM whether the bug is in the drafted
-   test (retry, up to `max_attempts`) or in the source under test (stop and flag
-   it in the report -- the loop never rewrites a test to dodge a real bug).
-5. `finalize` records the outcome: `passed`, `flagged_source_bug`, `unresolved`,
-   or `blocked`.
-
-Entry point (`agent.py`):
+Entry points (`agent.py`):
 
 - `invoke_codetest_writer_agent(llm, scenarios, file_writer, output_dir, root_dir, max_attempts=3, code_context_resolver=None)`
   -- compiles the per-scenario subgraph with a checkpointer (needed to resume
@@ -55,8 +40,12 @@ Entry point (`agent.py`):
   `code_context_question` interrupt by calling `code_context_resolver(question)`
   (falling back to "No code context available." if none is given), then writes
   results via a `BaseTestWriter` (see `write_report/`).
+- `iter_codetest_writer_agent_steps(llm, scenarios, file_writer, output_dir, root_dir, max_attempts=3)`
+  -- same driver loop, but as a generator: `yield`s each `code_context_question`
+  instead of resolving it, resumes via `.send(answer)`, and returns the final
+  `list[TestWriteResult]` as the generator's `StopIteration.value`. This is what
+  `agent_executor.py` drives to answer questions across separate A2A requests.
 
-v1 scope: Python + pytest targets only, and execution isolation is subprocess +
-scratch-dir + timeout, not a container. The target's own `uv`-managed `.venv`
-is auto-detected and used when present; there is no explicit override config
-yet.
+See [`write_one_scenario_agent/README.md`](write_one_scenario_agent/README.md)
+for what actually happens inside each scenario (the graph, its nodes, and the
+v1 execution-isolation scope).
