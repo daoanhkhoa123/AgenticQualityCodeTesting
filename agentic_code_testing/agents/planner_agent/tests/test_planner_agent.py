@@ -9,7 +9,7 @@ from agentic_code_testing.llm.groq_client import llm
 #     user_story = MOCK_STORY_AGENT_STATE.model_copy(update={"acceptance_criteria": BULLETED_AC})
 #     file_writer = MarkdownScenarioWriter()
 
-#     scenarios = invoke_planning_agent(llm, user_story, file_writer, tmp_path)
+#     scenarios = invoke_planning_agent(llm, user_story, file_writer, tmp_path, root_dir=str(tmp_path))
 
 #     assert scenarios, "planner agent should generate at least one scenario"
 #     assert all(isinstance(scenario, Scenario) for scenario in scenarios)
