@@ -8,6 +8,8 @@ _ENV_FILE_ENCODING = "utf-8"
 
 class _KeyConfig(BaseSettings):
     groq_api_key: str
+    ollama_base_url: str
+    ollama_model: str
 
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,
