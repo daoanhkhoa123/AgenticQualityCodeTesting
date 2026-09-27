@@ -27,12 +27,17 @@ GENERATE_SENARIO_PROMPT = """
     is_category_covered to true if no further senario is needed, and explain
     your decision in coverage_reasoning. If is_category_covered is true, set
     scenario to null.
+
+    If the code context above is missing or insufficient to write a senario
+    grounded in the real implementation, do NOT guess: leave scenario null and
+    set code_context_question to a specific question about the codebase you
+    need answered first. Otherwise leave code_context_question null.
 """
 
 prompt_template = PromptTemplate.from_template(GENERATE_SENARIO_PROMPT)
 
 
-def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentContext]) -> dict:   
+def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentContext]) -> dict:
     ac = runtime.context.acs[state.ac_idx]
     ac_id = f"AC-{state.ac_idx + 1}"
     llm = runtime.context.llm
@@ -52,9 +57,13 @@ def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentCon
     if not isinstance(result, ScenarioGenResult):
         raise TypeError(f"Expected ScenarioGenResult from structured output, got {type(result)}")
 
+    if result.code_context_question:
+        return {"pending_code_context_question": result.code_context_question}
+
     update = {
         "is_category_covered": result.is_category_covered,
         "coverage_reasoning": result.coverage_reasoning,
+        "pending_code_context_question": None,
     }
 
     if result.scenario is not None:
@@ -70,9 +79,15 @@ def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentCon
     return update
 
 
+NEEDS_CONTEXT_ROUTET = Literal["needs_context", "limit_senarios"]
+def route_maybe_needs_context(state: PlannerAgentState) -> NEEDS_CONTEXT_ROUTET:
+    if state.pending_code_context_question:
+        return "needs_context"
+    return "limit_senarios"
+
+
 GENERATE_AGAIN_ROUTET = Literal["generate_again", "next_category"]
 def route_maybe_senarios(state: PlannerAgentState) -> GENERATE_AGAIN_ROUTET:
     if not state.is_category_covered:
         return "generate_again"
     return "next_category"
-
