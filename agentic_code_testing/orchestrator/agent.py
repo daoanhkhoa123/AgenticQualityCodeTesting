@@ -1,23 +1,50 @@
 import logging
+from pathlib import Path
 
 from agentic_code_testing.logging.pydantic_logger import setup_logging
+from agentic_code_testing.orchestrator.clients.codetest_writer_client import ask_codetest_writer_agent_async
+from agentic_code_testing.orchestrator.clients.planner_client import ask_planner_agent_async
+from agentic_code_testing.orchestrator.clients.user_story_client import ask_user_story_agent_async
+from agentic_code_testing.orchestrator.typed_schemas import PipelineResult
+from agentic_code_testing.orchestrator.write_markdown.base import BasePipelineResultWriter
+from agentic_code_testing.orchestrator.write_markdown.markdown_writer import MarkdownPipelineResultWriter
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
+DEFAULT_PIPELINE_OUTPUT_DIR = "outputs/pipeline_outputs"
 
-def run_pipeline(file_path: str, story_id: int, output_dir: str, root_dir: str):
-    """Stub -- no workflow logic yet.
 
-    Intended sequence once implemented:
-    1. user_story_agent.client.ask_user_story_agent(file_path, story_id) -> StoryAgentState
-    2. planner_agent.client.ask_planner_agent(user_story, output_dir, root_dir) -> list[Scenario]
-    3. codetest_writer_agent.client.ask_codetest_writer_agent(scenarios, output_dir, root_dir)
-       -> list[TestWriteResult]
+async def run_pipeline(
+    file_path: str,
+    story_id: int,
+    output_dir: str,
+    root_dir: str,
+    file_writer: BasePipelineResultWriter | None = None,
+    pipeline_output_dir: str | Path = DEFAULT_PIPELINE_OUTPUT_DIR,
+) -> PipelineResult:
+    """Runs user_story_agent -> planner_agent -> codetest_writer_agent in sequence over A2A.
 
-    planner_agent and codetest_writer_agent each already resolve their own
-    request_code_context interrupts via code_reader_agent.client.ask_code_reader
-    (see their agent_executor.py) -- the orchestrator doesn't need to answer
-    those itself, only call the three agents above in order.
+    An empty scenarios/test_results list is a legitimate outcome (e.g. no AC could be
+    grounded in root_dir), not an error, so it is returned as-is. Any raised exception
+    (unreachable file, unreachable downstream agent, timeout) propagates uncaught --
+    the caller (agent_executor.py) lets it surface as a normal A2A error.
     """
-    raise NotImplementedError("orchestrator workflow logic not implemented yet")
+    logger.info("Starting pipeline for story_id=%s, file_path=%s", story_id, file_path)
+
+    user_story = await ask_user_story_agent_async(file_path, story_id)
+    scenarios = await ask_planner_agent_async(user_story, output_dir, root_dir)
+    test_results = await ask_codetest_writer_agent_async(scenarios, output_dir, root_dir)
+
+    result = PipelineResult(
+        story_id=story_id,
+        user_story=user_story,
+        scenarios=scenarios,
+        test_results=test_results,
+    )
+
+    written_path = (file_writer or MarkdownPipelineResultWriter()).write(result, pipeline_output_dir)
+    logger.info("Wrote pipeline result for story_id=%s to %s", story_id, written_path)
+
+    logger.info("Finished pipeline for story_id=%s", story_id)
+    return result

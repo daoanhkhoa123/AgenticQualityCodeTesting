@@ -15,6 +15,11 @@ class _ServerConfig(BaseSettings):
     planner_agent_url: str = "http://127.0.0.1:9996"
     codetest_writer_agent_url: str = "http://127.0.0.1:9997"
 
+    code_reader_agent_timeout_s: float = 60.0
+    user_story_agent_timeout_s: float = 60.0
+    planner_agent_timeout_s: float = 300.0
+    codetest_writer_agent_timeout_s: float = 600.0
+
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,
         env_file_encoding=_ENV_FILE_ENCODING,
