@@ -3,7 +3,7 @@
 Read-only Q&A agent over a directory of code.
 
 Given a root directory and a user question, the agent explores the directory with
-three tools and answers based only on what it reads -- it never executes, runs, or
+nine tools and answers based only on what it reads -- it never executes, runs, or
 tests any code.
 
 Tools (all scoped to the given root directory, in `tools/`):
@@ -11,10 +11,19 @@ Tools (all scoped to the given root directory, in `tools/`):
 - `list_directory` -- ASCII tree of files/folders (wraps `list_directory_func.print_tree`)
 - `read_file` -- reads a single file's text content
 - `search_in_files` -- regex search across files, returns `path:line: text` hits
+- six more from `tools/mcp_code_extractor.py`, proxied over MCP from the vendored
+  `third_party/mcp_servers/mcp_server_code_extractor` server: `get_symbols_tool`,
+  `get_function_tool`, `get_class_tool`, `get_lines_tool`, `get_signature_tool`,
+  `search_code_tool` -- each wrapped so its path/scope argument is resolved
+  through the same `resolve_within_root` boundary as the other three, with
+  `://`-URLs and `git@`-style refs rejected outright (the upstream server can
+  otherwise fetch from GitHub/GitLab) and `search_code_tool`'s `follow_symlinks`
+  forced to `False` regardless of what's passed in
 
 Entry points (`agent.py`):
 
-- `create_code_reader_agent(llm, root_dir)` -- builds the compiled ReAct agent
+- `create_code_reader_agent(llm, root_dir)` -- async; builds the compiled ReAct
+  agent, spinning up the MCP code-extractor tools alongside the three local ones
 
 ## Running as an A2A server
 

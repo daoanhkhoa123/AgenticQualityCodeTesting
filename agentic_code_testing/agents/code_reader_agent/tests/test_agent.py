@@ -1,3 +1,5 @@
+import asyncio
+
 from langchain_core.messages import HumanMessage
 
 from agentic_code_testing.agents.code_reader_agent.agent import create_code_reader_agent
@@ -5,12 +7,16 @@ from agentic_code_testing.agents.code_reader_agent.tests.mock_data import FIXTUR
 from agentic_code_testing.llm.ollama_client import llm
 
 
+async def _ask(question: str) -> str:
+    agent = await create_code_reader_agent(llm, FIXTURE_DIR)
+    result = await agent.ainvoke({"messages": [HumanMessage(content=question)]})
+    return result["messages"][-1].content
+
+
 def test_answer_question_describes_read_file_function():
-    agent = create_code_reader_agent(llm, FIXTURE_DIR)
-    result = agent.invoke({"messages": [HumanMessage(
-        content="What does the read_file function in read_file.py do, and what does it return?"
-    )]})
-    answer = result["messages"][-1].content
+    answer = asyncio.run(_ask(
+        "What does the read_file function in read_file.py do, and what does it return?"
+    ))
 
     assert "read_file.py" in answer
     assert "read_text" in answer or "string" in answer.lower()
@@ -18,11 +24,7 @@ def test_answer_question_describes_read_file_function():
 
 
 def test_answer_question_refuses_to_execute():
-    agent = create_code_reader_agent(llm, FIXTURE_DIR)
-    result = agent.invoke({"messages": [HumanMessage(
-        content="Please run read_file.py and tell me the output."
-    )]})
-    answer = result["messages"][-1].content
+    answer = asyncio.run(_ask("Please run read_file.py and tell me the output."))
     print(f"answer:\n{answer}")
 
     lowered = answer.lower().replace("'", "'")

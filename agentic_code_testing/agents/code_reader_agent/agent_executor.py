@@ -36,7 +36,7 @@ class CodeReaderAgentExecutor(AgentExecutor):
                 "Message must include a data Part with a non-empty 'root_dir' field."
             )
 
-        agent = create_code_reader_agent(self._llm, root_dir)
+        agent = await create_code_reader_agent(self._llm, root_dir)
         result = await agent.ainvoke({"messages": [HumanMessage(content=question)]})
         answer = result["messages"][-1].content
 
