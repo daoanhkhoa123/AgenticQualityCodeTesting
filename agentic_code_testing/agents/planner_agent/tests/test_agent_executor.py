@@ -75,8 +75,8 @@ def test_execute_asks_for_code_context_then_resumes_and_completes(monkeypatch):
     asyncio.run(executor.execute(context, queue))
 
     assert "task-1" in executor._runs
-    assert len(queue.events) == 1
-    status_event = queue.events[0]
+    assert len(queue.events) == 2
+    status_event = queue.events[1]
     assert status_event.status.state == TaskState.TASK_STATE_INPUT_REQUIRED
     assert status_event.status.message.parts[0].text == "Which file defines the login handler?"
 
@@ -86,8 +86,8 @@ def test_execute_asks_for_code_context_then_resumes_and_completes(monkeypatch):
     asyncio.run(executor.execute(resume_context, queue))
 
     assert "task-1" not in executor._runs
-    assert len(queue.events) == 2
-    completed_event = queue.events[1]
+    assert len(queue.events) == 4
+    completed_event = queue.events[3]
     assert completed_event.status.state == TaskState.TASK_STATE_COMPLETED
     scenarios = json.loads(completed_event.status.message.parts[0].text)
     assert scenarios[0]["scenario_id"] == "S-1"
@@ -111,14 +111,14 @@ def test_execute_streams_progress_artifact_then_completes_in_one_call(monkeypatc
     # A single execute() call should stream the progress artifact and still
     # reach "done" without waiting for a second incoming message.
     assert "task-1" not in executor._runs
-    assert len(queue.events) == 2
+    assert len(queue.events) == 3
 
-    artifact_event = queue.events[0]
+    artifact_event = queue.events[1]
     assert artifact_event.artifact.name == "scenario"
     scenario_data = get_data_parts(artifact_event.artifact.parts)[0]
     assert scenario_data["scenario_id"] == "S-1"
 
-    completed_event = queue.events[1]
+    completed_event = queue.events[2]
     assert completed_event.status.state == TaskState.TASK_STATE_COMPLETED
     scenarios = json.loads(completed_event.status.message.parts[0].text)
     assert scenarios[0]["scenario_id"] == "S-1"

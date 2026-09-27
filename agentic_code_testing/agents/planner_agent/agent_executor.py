@@ -4,10 +4,11 @@ import logging
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from a2a.helpers import get_data_parts, new_data_part, new_text_message
+from a2a.helpers import get_data_parts, new_data_part, new_task, new_text_message
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
+from a2a.types import TaskState
 
 from agentic_code_testing.agents.planner_agent.agent import iter_planning_agent_steps
 from agentic_code_testing.agents.planner_agent.write_markdown.markdown_writer import MarkdownScenarioWriter
@@ -45,6 +46,11 @@ class PlannerAgentExecutor(AgentExecutor):
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         task_id = context.task_id
+
+        if context.current_task is None:
+            await event_queue.enqueue_event(
+                new_task(task_id, context.context_id, TaskState.TASK_STATE_WORKING)
+            )
 
         if task_id in self._runs:
             gen = self._runs[task_id]

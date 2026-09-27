@@ -66,8 +66,8 @@ def test_execute_asks_for_code_context_then_resumes_and_completes(monkeypatch):
     asyncio.run(executor.execute(context, queue))
 
     assert "task-1" in executor._runs
-    assert len(queue.events) == 1
-    status_event = queue.events[0]
+    assert len(queue.events) == 2
+    status_event = queue.events[1]
     assert status_event.status.state == TaskState.TASK_STATE_INPUT_REQUIRED
     assert status_event.status.message.parts[0].text == "Which file defines add()?"
 
@@ -77,8 +77,8 @@ def test_execute_asks_for_code_context_then_resumes_and_completes(monkeypatch):
     asyncio.run(executor.execute(resume_context, queue))
 
     assert "task-1" not in executor._runs
-    assert len(queue.events) == 2
-    completed_event = queue.events[1]
+    assert len(queue.events) == 4
+    completed_event = queue.events[3]
     assert completed_event.status.state == TaskState.TASK_STATE_COMPLETED
     results = json.loads(completed_event.status.message.parts[0].text)
     assert results[0]["scenario_id"] == "S-1"

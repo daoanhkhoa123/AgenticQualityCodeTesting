@@ -43,6 +43,16 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
             async for response in client.send_message(SendMessageRequest(message=message)):
                 final = response
 
+            if final.HasField("status_update") and final.status_update.status.state == TaskState.TASK_STATE_INPUT_REQUIRED:
+                question = get_message_text(final.status_update.status.message)
+                answer = await ask_code_reader_async(question, root_dir)
+                message = new_message(
+                    parts=[new_text_part(answer)],
+                    task_id=final.status_update.task_id,
+                    context_id=final.status_update.context_id,
+                )
+                continue
+
             if final.HasField("task") and final.task.status.state == TaskState.TASK_STATE_INPUT_REQUIRED:
                 question = get_message_text(final.task.status.message)
                 answer = await ask_code_reader_async(question, root_dir)
