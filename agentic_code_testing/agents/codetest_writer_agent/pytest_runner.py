@@ -27,9 +27,11 @@ def run_pytest_on_code(
     test_path = scratch_dir / f"test_{scenario_id}.py"
     test_path.write_text(code, encoding="utf-8")
 
+    python_executable = _detect_venv_python(root_dir) or Path(sys.executable)
+
     try:
         completed = subprocess.run(
-            [sys.executable, "-m", "pytest", str(test_path), "--tb=short", "-q"],
+            [str(python_executable), "-m", "pytest", str(test_path), "--tb=short", "-q"],
             cwd=str(root_dir),
             capture_output=True,
             text=True,
@@ -51,6 +53,23 @@ def run_pytest_on_code(
     finally:
         shutil.rmtree(scratch_dir, ignore_errors=True)
         _remove_empty_parents(scratch_dir.parent, stop_at=root_dir)
+
+
+def _detect_venv_python(root_dir: Path) -> Path | None:
+    """Return the python executable of a uv-managed venv at root_dir/.venv, if present.
+
+    Checks both the Windows and POSIX layouts unconditionally rather than
+    branching on os.name/sys.platform first -- uv only ever creates one of
+    these depending on the OS it ran on, so at most one candidate exists, and
+    checking both keeps the function portable and testable on any host OS.
+    """
+    for candidate in (
+        root_dir / ".venv" / "Scripts" / "python.exe",
+        root_dir / ".venv" / "bin" / "python",
+    ):
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 def _remove_empty_parents(directory: Path, stop_at: Path) -> None:

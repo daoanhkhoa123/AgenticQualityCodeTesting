@@ -30,8 +30,11 @@ Per scenario:
    process/dynamic-code execution). If it matches, the draft is never written to
    disk or executed; the scenario goes straight to `finalize` as `blocked`.
    Otherwise it runs via `pytest_runner.run_pytest_on_code`: a `subprocess` call
-   to `python -m pytest`, in a scratch directory under the target `root_dir` (so
-   the target's own `conftest.py`/fixtures resolve), always cleaned up afterwards.
+   to `python -m pytest`, using the target's own `.venv` interpreter if
+   `root_dir` has a `uv`-managed one (`.venv/Scripts/python.exe` or
+   `.venv/bin/python`), falling back to the agent's own `sys.executable`
+   otherwise, in a scratch directory under the target `root_dir` (so the
+   target's own `conftest.py`/fixtures resolve), always cleaned up afterwards.
 4. On failure, `classify_failure` asks the LLM whether the bug is in the drafted
    test (retry, up to `max_attempts`) or in the source under test (stop and flag
    it in the report -- the loop never rewrites a test to dodge a real bug).
@@ -48,4 +51,6 @@ Entry point (`agent.py`):
   results via a `BaseTestWriter` (see `write_report/`).
 
 v1 scope: Python + pytest targets only, and execution isolation is subprocess +
-scratch-dir + timeout, not a container or per-run venv.
+scratch-dir + timeout, not a container. The target's own `uv`-managed `.venv`
+is auto-detected and used when present; there is no explicit override config
+yet.
