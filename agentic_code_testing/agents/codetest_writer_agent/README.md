@@ -3,10 +3,14 @@
 Consumes the `Scenario` list produced by `planner_agent` and, for each one, drafts
 a pytest test against a target codebase, runs it, and self-corrects.
 
-This agent never references `code_reader_agent` -- it has no A2A client, no base
-URL. If a draft needs more information about the target codebase, it asks for it
-by suspending the graph; only `orchestrator_agent` decides how (or whether) that
-question gets answered. See `agentic_code_testing/agents/orchestrator_agent`.
+The core graph (`agent.py`/`write_one_scenario_agent`) never references
+`code_reader_agent` directly -- if a draft needs more information about the
+target codebase, it asks for it by suspending the graph, and whoever calls
+`invoke_codetest_writer_agent` decides how (or whether) that question gets
+answered via the `code_context_resolver` callback. This package's A2A wrapper
+(`agent_executor.py`) currently wires that callback straight to
+`code_reader_agent.client.ask_code_reader`, since there's no orchestrator
+workflow logic yet -- see `agentic_code_testing/orchestrator`.
 
 Graph (`write_one_scenario_agent/graph.py`):
 
@@ -19,9 +23,10 @@ Per scenario:
    ground it in the real implementation, sets `code_context_question` instead of
    guessing.
 2. If a question was asked, `request_code_context` suspends the graph with
-   `langgraph.types.interrupt(...)`. Whoever is running the graph (normally
-   `orchestrator_agent`) resumes it with an answer via `Command(resume=answer)`;
-   this node then folds that answer into `code_context` and, if the answer names
+   `langgraph.types.interrupt(...)`. `invoke_codetest_writer_agent`'s driver loop
+   (`agent.py`) resumes it with an answer via `Command(resume=answer)`, taken from
+   whatever `code_context_resolver` callback the caller passed in; this node then
+   folds that answer into `code_context` and, if the answer names
    a file it can resolve, re-runs stdlib `ast` (`static_analysis.py`) to refresh
    `static_context` (signatures/docstrings/existing test files to reuse) before
    looping back to `draft_test`.
