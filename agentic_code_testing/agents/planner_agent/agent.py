@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import Callable, Optional
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
@@ -7,13 +8,15 @@ from langgraph.types import Command
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentState
 from agentic_code_testing.agents.planner_agent.extract_ac_agent.typed_schemas import ExtractACAgentState
 from agentic_code_testing.agents.planner_agent.extract_ac_agent.graph import builder as extract_ac_builder
-from agentic_code_testing.agents.planner_agent.plann_one_ac_agent.graph import planner_agent_once_ac
+from agentic_code_testing.agents.planner_agent.plann_one_ac_agent.graph import builder as planner_once_ac_builder
 from agentic_code_testing.agents.planner_agent.typed_schemas import PlannerAgentState, PlannerAgentContext
 from agentic_code_testing.agents.planner_agent.write_markdown.base import BaseScenarioWriter
 from agentic_code_testing.logging.pydantic_logger import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+MAX_CODE_CONTEXT_ROUNDS = 5
 
 
 def invoke_planning_agent(
@@ -23,6 +26,7 @@ def invoke_planning_agent(
     output_dir,
     root_dir: str,
     max_acs: int | None = None,
+    code_context_resolver: Optional[Callable[[str], str]] = None,
 ):
     logger.info("Starting planning agent for story_id=%s", user_story.story_id)
 
@@ -52,11 +56,22 @@ def invoke_planning_agent(
 
     context = context.model_copy(update={"acs": acs})
 
+    planner_graph = planner_once_ac_builder.compile(checkpointer=InMemorySaver())
+
     all_scenarios = []
     for ac_idx in range(len(acs)):
         logger.info("Generating scenarios for AC %d/%d", ac_idx + 1, len(acs))
         state = PlannerAgentState(ac_idx=ac_idx, is_category_covered=False, coverage_reasoning="")
-        result = planner_agent_once_ac.invoke(state, context=context)
+        ac_config = {"configurable": {"thread_id": str(uuid.uuid4())}}
+
+        result = planner_graph.invoke(state, config=ac_config, context=context)
+        rounds = 0
+        while "__interrupt__" in result and rounds < MAX_CODE_CONTEXT_ROUNDS:
+            question = result["__interrupt__"][0].value["question"]
+            answer = code_context_resolver(question) if code_context_resolver else "No code context available."
+            result = planner_graph.invoke(Command(resume=answer), config=ac_config, context=context)
+            rounds += 1
+
         logger.info("Generated %d scenarios for AC %d/%d", len(result["scenarios"]), ac_idx + 1, len(acs))
         all_scenarios.extend(result["scenarios"])
 
