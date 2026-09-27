@@ -58,6 +58,8 @@ class MarkdownPipelineResultWriter(BasePipelineResultWriter):
             ]
             if test_result.notes:
                 lines.append(f"- **Notes:** {test_result.notes}")
+            if test_result.test_code:
+                lines += ["", "```python", test_result.test_code, "```"]
             lines.append("")
 
         return "\n".join(lines) + "\n"

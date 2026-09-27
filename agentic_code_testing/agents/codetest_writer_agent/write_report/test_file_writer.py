@@ -50,6 +50,8 @@ class GeneratedTestWriter(BaseTestWriter):
                     f"- **Test-code bug:** {result.classification.is_test_code_bug}",
                     f"- **Reasoning:** {result.classification.reasoning}",
                 ]
+            if result.test_code:
+                lines += ["", "### Test code", "", "```python", result.test_code, "```"]
             lines.append("")
 
         return "\n".join(lines) + "\n"
