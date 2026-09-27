@@ -8,6 +8,9 @@ GENERATE_SENARIO_PROMPT = """
     Based on this accepctance criteria
     {ac}
 
+    Relevant code context:
+    {code_context}
+
     Write a senario follow this caterogy: {sen_cat}
 
 
@@ -40,6 +43,7 @@ def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentCon
     chain = prompt_template | llm.with_structured_output(ScenarioGenResult)
     result = chain.invoke({
         "ac": ac,
+        "code_context": state.code_context or "No code context available",
         "sen_cat": state.current_category,
         "gened_sen": gened_sen,
         "not_covered_reasoning": state.coverage_reasoning,

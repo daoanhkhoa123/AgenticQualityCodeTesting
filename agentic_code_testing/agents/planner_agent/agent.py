@@ -21,12 +21,13 @@ def invoke_planning_agent(
     user_story: StoryAgentState,
     file_writer: BaseScenarioWriter,
     output_dir,
+    root_dir: str,
     max_acs: int | None = None,
 ):
     logger.info("Starting planning agent for story_id=%s", user_story.story_id)
 
     state = ExtractACAgentState()
-    context = PlannerAgentContext(llm=llm, user_story=user_story)
+    context = PlannerAgentContext(llm=llm, user_story=user_story, root_dir=root_dir)
 
     extract_ac_graph = extract_ac_builder.compile(checkpointer=InMemorySaver())
     config = {"configurable": {"thread_id": str(uuid.uuid4())}}

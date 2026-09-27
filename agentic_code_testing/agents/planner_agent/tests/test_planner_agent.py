@@ -30,7 +30,7 @@ def test_invoke_planning_agent_without_bulleted_ac(tmp_path):
     user_story = MOCK_STORY_AGENT_STATE.model_copy(update={"acceptance_criteria": NOT_FOUND_TOKEN})
     file_writer = MarkdownScenarioWriter()
 
-    scenarios = invoke_planning_agent(llm, user_story, file_writer, tmp_path, max_acs=2)
+    scenarios = invoke_planning_agent(llm, user_story, file_writer, tmp_path, root_dir=str(tmp_path), max_acs=2)
 
     assert all(isinstance(scenario, Scenario) for scenario in scenarios)
 
