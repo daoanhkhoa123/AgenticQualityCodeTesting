@@ -11,3 +11,5 @@ wheels/
 
 outputs/
 app.log
+
+third_party/mcp_servers/mcp_server_code_extractor/
