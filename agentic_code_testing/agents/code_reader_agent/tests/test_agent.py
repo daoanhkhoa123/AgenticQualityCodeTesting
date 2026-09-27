@@ -2,7 +2,7 @@ from langchain_core.messages import HumanMessage
 
 from agentic_code_testing.agents.code_reader_agent.agent import create_code_reader_agent
 from agentic_code_testing.agents.code_reader_agent.tests.mock_data import FIXTURE_DIR
-from agentic_code_testing.llm.groq_client import llm
+from agentic_code_testing.llm.ollama_client import llm
 
 
 def test_answer_question_describes_read_file_function():

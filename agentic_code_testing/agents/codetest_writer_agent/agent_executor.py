@@ -10,11 +10,10 @@ from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
 
-from agentic_code_testing.agents.code_reader_agent.client import ask_code_reader
 from agentic_code_testing.agents.codetest_writer_agent.agent import invoke_codetest_writer_agent
 from agentic_code_testing.agents.codetest_writer_agent.write_report.test_file_writer import GeneratedTestWriter
 from agentic_code_testing.agents.planner_agent.typed_schemas import Scenario
-from agentic_code_testing.llm.groq_client import llm as default_llm
+from agentic_code_testing.llm.ollama_client import llm as default_llm
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +24,9 @@ class CodetestWriterAgentExecutor(AgentExecutor):
     """Exposes invoke_codetest_writer_agent over the A2A protocol.
 
     scenarios/output_dir/root_dir/max_attempts come from the incoming
-    message's data Part. code_context_resolver is wired to code_reader_agent's
-    A2A client, matching the seam invoke_codetest_writer_agent already expects.
+    message's data Part. Resolves no code-context interrupts itself --
+    invoke_codetest_writer_agent falls back to a stock answer until the
+    orchestrator wires a resolver in.
     """
 
     def __init__(self, llm: BaseChatModel | None = None):
@@ -48,9 +48,6 @@ class CodetestWriterAgentExecutor(AgentExecutor):
         # coerce back to int at this boundary.
         max_attempts = int(payload.get("max_attempts", 3))
 
-        def code_context_resolver(question: str) -> str:
-            return ask_code_reader(question, root_dir)
-
         results = await asyncio.to_thread(
             invoke_codetest_writer_agent,
             self._llm,
@@ -59,7 +56,6 @@ class CodetestWriterAgentExecutor(AgentExecutor):
             output_dir,
             root_dir,
             max_attempts,
-            code_context_resolver,
         )
 
         await event_queue.enqueue_event(

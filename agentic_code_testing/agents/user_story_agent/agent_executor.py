@@ -8,7 +8,7 @@ from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
 
 from agentic_code_testing.agents.user_story_agent.agent import invoke_user_story_agent
-from agentic_code_testing.llm.groq_client import llm as default_llm
+from agentic_code_testing.llm.ollama_client import llm as default_llm
 
 logger = logging.getLogger(__name__)
 

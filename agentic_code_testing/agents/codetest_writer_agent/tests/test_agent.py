@@ -15,7 +15,7 @@ from agentic_code_testing.agents.codetest_writer_agent.write_one_scenario_agent.
     classify_failure,
 )
 from agentic_code_testing.agents.codetest_writer_agent.write_report.test_file_writer import GeneratedTestWriter
-from agentic_code_testing.llm.groq_client import llm
+from agentic_code_testing.llm.ollama_client import llm
 
 MAX_ATTEMPTS = 3
 

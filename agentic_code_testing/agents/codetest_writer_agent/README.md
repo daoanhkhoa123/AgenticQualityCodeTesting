@@ -8,9 +8,10 @@ The core graph (`agent.py`/`write_one_scenario_agent`) never references
 target codebase, it asks for it by suspending the graph, and whoever calls
 `invoke_codetest_writer_agent` decides how (or whether) that question gets
 answered via the `code_context_resolver` callback. This package's A2A wrapper
-(`agent_executor.py`) currently wires that callback straight to
-`code_reader_agent.client.ask_code_reader`, since there's no orchestrator
-workflow logic yet -- see `agentic_code_testing/orchestrator`.
+(`agent_executor.py`) passes no resolver, so any such question falls back to
+"No code context available." -- wiring a real resolver (e.g. a direct A2A
+call to `code_reader_agent`) is the orchestrator's job, once
+`agentic_code_testing/orchestrator` implements it.
 
 Graph (`write_one_scenario_agent/graph.py`):
 

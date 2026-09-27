@@ -4,7 +4,7 @@ import pytest
 
 from agentic_code_testing.agents.user_story_agent.subgraphs.parsing_graph import parsing_graph
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentContext, StoryAgentState
-from agentic_code_testing.llm.groq_client import llm
+from agentic_code_testing.llm.ollama_client import llm
 
 SAMPLE_STORY_PATH = (
     Path(__file__).resolve().parents[4] / "user_inputs" / "user_stories" / "05_leaderboard_no_format.md"

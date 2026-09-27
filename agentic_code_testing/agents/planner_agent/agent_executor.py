@@ -9,11 +9,10 @@ from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
 
-from agentic_code_testing.agents.code_reader_agent.client import ask_code_reader
 from agentic_code_testing.agents.planner_agent.agent import invoke_planning_agent
 from agentic_code_testing.agents.planner_agent.write_markdown.markdown_writer import MarkdownScenarioWriter
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentState
-from agentic_code_testing.llm.groq_client import llm as default_llm
+from agentic_code_testing.llm.ollama_client import llm as default_llm
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +21,8 @@ class PlannerAgentExecutor(AgentExecutor):
     """Exposes invoke_planning_agent over the A2A protocol.
 
     user_story/output_dir/root_dir/max_acs come from the incoming message's
-    data Part. code_context_resolver is wired to code_reader_agent's A2A
-    client, matching the seam invoke_planning_agent already expects.
+    data Part. Resolves no code-context interrupts itself -- invoke_planning_agent
+    falls back to a stock answer until the orchestrator wires a resolver in.
     """
 
     def __init__(self, llm: BaseChatModel | None = None):
@@ -46,9 +45,6 @@ class PlannerAgentExecutor(AgentExecutor):
         raw_max_acs = payload.get("max_acs")
         max_acs = int(raw_max_acs) if raw_max_acs is not None else None
 
-        def code_context_resolver(question: str) -> str:
-            return ask_code_reader(question, root_dir)
-
         scenarios = await asyncio.to_thread(
             invoke_planning_agent,
             self._llm,
@@ -57,7 +53,6 @@ class PlannerAgentExecutor(AgentExecutor):
             output_dir,
             root_dir,
             max_acs,
-            code_context_resolver,
         )
 
         await event_queue.enqueue_event(

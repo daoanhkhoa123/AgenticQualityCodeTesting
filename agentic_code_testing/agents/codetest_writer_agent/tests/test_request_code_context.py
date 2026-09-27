@@ -10,7 +10,7 @@ from agentic_code_testing.agents.codetest_writer_agent.typed_schemas import (
 from agentic_code_testing.agents.codetest_writer_agent.write_one_scenario_agent.nodes.request_code_context import (
     request_code_context,
 )
-from agentic_code_testing.llm.groq_client import llm
+from agentic_code_testing.llm.ollama_client import llm
 
 
 def _build_mini_graph():

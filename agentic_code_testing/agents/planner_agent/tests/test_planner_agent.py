@@ -3,7 +3,7 @@ from agentic_code_testing.agents.planner_agent.tests.mock_data import MOCK_STORY
 from agentic_code_testing.agents.planner_agent.typed_schemas import Scenario
 from agentic_code_testing.agents.planner_agent.write_markdown.markdown_writer import MarkdownScenarioWriter
 from agentic_code_testing.agents.user_story_agent.nodes.parsing_nodes import NOT_FOUND_TOKEN
-from agentic_code_testing.llm.groq_client import llm
+from agentic_code_testing.llm.ollama_client import llm
 
 # def test_invoke_planning_agent_writes_scenarios_to_markdown(tmp_path):
 #     user_story = MOCK_STORY_AGENT_STATE.model_copy(update={"acceptance_criteria": BULLETED_AC})
@@ -30,7 +30,7 @@ def test_invoke_planning_agent_without_bulleted_ac(tmp_path):
     user_story = MOCK_STORY_AGENT_STATE.model_copy(update={"acceptance_criteria": NOT_FOUND_TOKEN})
     file_writer = MarkdownScenarioWriter()
 
-    scenarios = invoke_planning_agent(llm, user_story, file_writer, tmp_path, root_dir=str(tmp_path), max_acs=2)
+    scenarios = invoke_planning_agent(llm, user_story, file_writer, tmp_path, root_dir=str(tmp_path))
 
     assert all(isinstance(scenario, Scenario) for scenario in scenarios)
 
