@@ -1,23 +1,63 @@
-The planning pipeline, step by step
+# Planner Agent
 
-Split ACs — a node takes acceptance_criteria (the raw string) and produces a list of discrete AC items, each getting an ac_id (AC-1, AC-2, ...). This can be regex/line-based (numbered/bulleted list → one item per line, same style as _extract_section in parse_text_body.py) or LLM-based if the formatting is inconsistent. Store this as new state, e.g. ac_items: list[str] plus an index/queue.
+Turns a user story into a list of `Scenario`s, grouped by acceptance
+criterion and category. This package is a logic wrapper: the actual
+extraction and generation work happens in two subgraphs it drives,
+[`extract_ac_agent`](extract_ac_agent/README.md) and
+[`plann_one_ac_agent`](plann_one_ac_agent/README.md); `agent.py` compiles
+each, sequences them, and handles the interrupt/resume plumbing and
+incremental progress reporting.
 
-Loop over ACs one at a time — this is exactly the select_next_field_node / route_after_select pattern in select_node.py. Instead of picking "which field is still empty," the planner's select node picks "which AC hasn't been planned yet," sets something like current_ac_id, and routes to "planning" or "planning_done" conditionally — same conditional-edge shape as the existing parsing_graph.
+![planner_agent](../../../docs/planner_agent.png)
 
-Generate scenarios for the current AC — the actual "planning" node. For current_ac_id's text, prompt the LLM to produce exactly one happy_path, one-or-more edge_case, and one-or-more negative_case Scenario objects (the model from state.py). The key move: use structured output (llm.with_structured_output(...) against a small wrapper model like list[Scenario] or a ScenariosForAC(scenarios: list[Scenario])) so the LLM is constrained to emit the exact pydantic shape — not free text you'd have to re-parse. story_id/ac_id get stamped onto each returned scenario by code (not trusted from the LLM), since traceability must be exact.
+The planning pipeline, step by step (`agent.py`):
 
-Accumulate — each loop iteration appends its scenarios into Plan.scenarios (a list-reducer channel in the graph state, same idea as the field being written back into state each time in select_next_field_node).
+1. Extract ACs -- `iter_planning_agent_steps` first runs the
+   `extract_ac_agent` subgraph (see its [README](extract_ac_agent/README.md))
+   to turn the story's `acceptance_criteria` into a list of `ac` strings. If
+   the story didn't have any to extract, the LLM makes plausible ones up and
+   the subgraph interrupts to ask a human to accept them, but there's no
+   human on this call path, so `iter_planning_agent_steps` just auto-accepts
+   whatever the LLM generated instead of blocking forever. `acs` then gets
+   capped to `max_acs` if one was given.
+2. Loop over ACs, then over categories -- this lives in `agent.py` as a plain
+   Python double loop, not a graph node. For each `ac_idx`, and for each of
+   `SCENARIO_CATEGORIES` (`"happy path"`, `"edge case"`, `"negative case"`),
+   a fresh `PlannerAgentState` is built and streamed through
+   `plann_one_ac_agent`'s compiled graph (see its
+   [README](plann_one_ac_agent/README.md)) on its own new `thread_id`. The
+   graph only ever handles the one `(ac, category)` pair it's given; the
+   caller decides what comes next.
+3. Stream progress and code-context questions -- as `plann_one_ac_agent`
+   streams updates, each newly generated scenario is yielded immediately as
+   `("progress", scenario)`, and any `code_context_question` interrupt is
+   surfaced as `("question", text)` to whoever's driving
+   `iter_planning_agent_steps` (the A2A executor, or a `code_context_resolver`
+   passed to `invoke_planning_agent`), which resumes the graph with whatever
+   answer comes back, up to `MAX_CODE_CONTEXT_ROUNDS` per category. Code
+   context accumulated within an AC carries over across that AC's
+   categories. `planner_agent` never calls `code_reader_agent` itself -- it
+   only ever asks the question; answering it is the caller's job.
+4. Done -- once every `(ac, category)` pair has been visited, `all_scenarios`
+   is written out via `file_writer.write(...)` (a `BaseScenarioWriter`, see
+   `write_markdown/`) and returned as the final result.
 
-Done — once every AC has been visited, route_after_select returns "planning_done", the graph ends, and the final state's Plan (story_id + full scenario list) is the artifact handed to the downstream Test Code Generator agent.
+Entry points (`agent.py`):
 
+- `invoke_planning_agent(llm, user_story, file_writer, output_dir, root_dir, max_acs=None, code_context_resolver=None)`
+  -- blocking; resolves each `code_context_question` in-process via
+  `code_context_resolver` (falling back to "No code context available." if
+  none is given) and discards progress events.
+- `iter_planning_agent_steps(llm, user_story, file_writer, output_dir, root_dir, max_acs=None)`
+  -- generator form: yields `("question", text)` for each code-context
+  question and `("progress", scenario)` as each scenario is generated,
+  expecting the answer (or `None` for a progress ack) sent back via
+  `.send()`. This lets a caller spanning multiple requests (an A2A executor)
+  pause/resume at questions and push progress out incrementally. Returns the
+  final `list[Scenario]` via `StopIteration.value`. `invoke_planning_agent`
+  is just a thin blocking wrapper around this generator.
 
-
----
-
-Extractr accpetance critera agent:
-Given a user story (read-only, passed via context not state):
-- llm tries to write accpetance criteas in a certan format (- a, - b, bullet point style)
-- if accpeatnce critea is found from input, then END return the list of accpetance critearia
-- if accpectance critera is not found from the input, then it should ask human it accpet this criteria
-- if human accept, then END
-- if not, then run the agent again
+See [`extract_ac_agent/README.md`](extract_ac_agent/README.md) for how
+acceptance criteria get extracted (or generated and human-reviewed), and
+[`plann_one_ac_agent/README.md`](plann_one_ac_agent/README.md) for how
+scenarios get generated for a single (ac, category) pair.

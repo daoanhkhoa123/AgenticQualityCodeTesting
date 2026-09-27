@@ -38,7 +38,7 @@ if __name__ == "__main__":
         version="0.1.0",
         default_input_modes=["application/json"],
         default_output_modes=["application/json"],
-        capabilities=AgentCapabilities(streaming=False, extended_agent_card=False),
+        capabilities=AgentCapabilities(streaming=True, extended_agent_card=False),
         supported_interfaces=[
             AgentInterface(
                 protocol_binding="JSONRPC",

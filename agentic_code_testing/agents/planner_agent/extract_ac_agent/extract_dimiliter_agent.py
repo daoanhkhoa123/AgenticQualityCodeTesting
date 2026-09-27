@@ -1,5 +1,7 @@
 import json
+import logging
 import re
+import time
 
 from langchain.agents import create_agent
 from langchain.tools import tool
@@ -9,6 +11,8 @@ from langgraph.runtime import Runtime
 
 from agentic_code_testing.agents.planner_agent.extract_ac_agent.typed_schemas import ExtractACAgentState
 from agentic_code_testing.agents.planner_agent.typed_schemas import PlannerAgentContext
+
+logger = logging.getLogger(__name__)
 
 @tool
 def extract_by_delimiter(text: str) -> str:
@@ -54,7 +58,14 @@ def extract_ac_node(state: ExtractACAgentState, runtime: Runtime[PlannerAgentCon
             "Please re-extract the acceptance criteria, taking this feedback into account."
         )))
 
-    result = agent.invoke({"messages": messages})
+    logger.info("Calling LLM to extract acceptance criteria")
+    started_at = time.monotonic()
+    try:
+        result = agent.invoke({"messages": messages})
+    except Exception:
+        logger.exception("LLM call failed after %.1fs while extracting acceptance criteria", time.monotonic() - started_at)
+        raise
+    logger.info("LLM call finished in %.1fs", time.monotonic() - started_at)
 
     for message in reversed(result["messages"]):
         if getattr(message, "name", None) != "extract_by_delimiter":

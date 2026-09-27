@@ -1,7 +1,11 @@
+import logging
+
 from langchain_core.prompts import PromptTemplate
 from langgraph.runtime import Runtime
 from typing import Literal
 from agentic_code_testing.agents.planner_agent.typed_schemas import PlannerAgentState, PlannerAgentContext, ScenarioGenResult
+
+logger = logging.getLogger(__name__)
 
 
 GENERATE_SENARIO_PROMPT = """
@@ -46,6 +50,8 @@ def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentCon
     gened_sen = "\n".join(f"- {scenario.title}" for scenario in already_generated if scenario.category==state.current_category) or "None yet"
 
     chain = prompt_template | llm.with_structured_output(ScenarioGenResult)
+
+    logger.info("Calling LLM to generate scenario for %s category '%s'", ac_id, state.current_category)
     result = chain.invoke({
         "ac": ac,
         "code_context": state.code_context or "No code context available",
@@ -53,6 +59,7 @@ def generate_senarios(state: PlannerAgentState, runtime: Runtime[PlannerAgentCon
         "gened_sen": gened_sen,
         "not_covered_reasoning": state.coverage_reasoning,
     })
+    logger.info("LLM call finished for %s category '%s'", ac_id, state.current_category)
 
     if not isinstance(result, ScenarioGenResult):
         raise TypeError(f"Expected ScenarioGenResult from structured output, got {type(result)}")
@@ -86,8 +93,8 @@ def route_maybe_needs_context(state: PlannerAgentState) -> NEEDS_CONTEXT_ROUTET:
     return "limit_senarios"
 
 
-GENERATE_AGAIN_ROUTET = Literal["generate_again", "next_category"]
+GENERATE_AGAIN_ROUTET = Literal["generate_again", "category_done"]
 def route_maybe_senarios(state: PlannerAgentState) -> GENERATE_AGAIN_ROUTET:
     if not state.is_category_covered:
         return "generate_again"
-    return "next_category"
+    return "category_done"

@@ -5,6 +5,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentState
 
 ScenarioCategory = Literal["happy path", "edge case", "negative case"]
+SCENARIO_CATEGORIES: list[ScenarioCategory] = ["happy path", "edge case", "negative case"]
 Priority = Literal["P0", "P1", "P2"]
 TestType = Literal["unit", "integration", "e2e"]
 
