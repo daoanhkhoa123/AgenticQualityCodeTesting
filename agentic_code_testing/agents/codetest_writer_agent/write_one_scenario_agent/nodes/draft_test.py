@@ -85,8 +85,9 @@ def draft_test(state: CodeTestWriterState, runtime: Runtime[CodeTestWriterContex
         "retry_context": _render_retry_context(state),
     }, DraftedTest)
 
-    if result.code_context_question:
-        return {"pending_code_context_question": result.code_context_question}
+    question = (result.code_context_question or "").strip()
+    if question:
+        return {"pending_code_context_question": question}
 
     if not result.code:
         # Model returned neither code nor a question -- ask a generic fallback
