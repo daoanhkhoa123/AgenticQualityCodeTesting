@@ -6,6 +6,15 @@ Given a root directory and a user question, the agent explores the directory wit
 nine tools and answers based only on what it reads -- it never executes, runs, or
 tests any code.
 
+Graph (`agent.py`):
+
+![code_reader_agent](../../../docs/code_reader_agent.png)
+
+`create_code_reader_agent` hands its tools to `langchain.agents.create_agent`,
+which compiles them into a standard ReAct loop (model node <-> tools node)
+rather than a hand-wired graph -- there's no bespoke control flow to diagram
+beyond "call tools until the model has enough to answer."
+
 Tools (all scoped to the given root directory, in `tools/`):
 
 - `list_directory` -- ASCII tree of files/folders (wraps `list_directory_func.print_tree`)

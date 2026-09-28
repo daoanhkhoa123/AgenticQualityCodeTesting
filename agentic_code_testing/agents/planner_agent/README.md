@@ -8,7 +8,21 @@ extraction and generation work happens in two subgraphs it drives,
 each, sequences them, and handles the interrupt/resume plumbing and
 incremental progress reporting.
 
-![planner_agent](../../../docs/planner_agent.png)
+![planner_agent](../../../docs/planner_agent.png) *(historical -- see note below)*
+
+That picture is the old, pre-split pipeline: one graph with `switch_ac`/
+`switch_category` nodes cycling internally over every AC and every category in
+a single long-running invocation. It was reduced to today's shape -- a plain
+Python double loop in `agent.py` (step 2 below) driving a small subgraph
+scoped to just one `(ac, category)` pair per run, see
+[`docs/planner_agent_once_ac.png`](../../../docs/planner_agent_once_ac.png) in
+[`plann_one_ac_agent`](plann_one_ac_agent/README.md) -- because a graph that
+only ever does one thing is far easier to trace and log: each `(ac, category)`
+pair now gets its own `thread_id` and checkpoint history, so a node's log line
+maps to exactly one iteration instead of being interleaved with every other
+AC/category sharing one cycling graph. Debugging "why did this one scenario
+come out wrong" no longer means untangling which pass through a shared node
+produced it.
 
 The planning pipeline, step by step (`agent.py`):
 
