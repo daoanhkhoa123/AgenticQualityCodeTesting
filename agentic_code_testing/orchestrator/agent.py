@@ -34,7 +34,7 @@ async def run_pipeline(
 
     user_story = await ask_user_story_agent_async(file_path, story_id)
     scenarios = await ask_planner_agent_async(user_story, output_dir, root_dir, max_acs=2)
-    test_results = await ask_codetest_writer_agent_async(scenarios, output_dir, root_dir)
+    test_results = await ask_codetest_writer_agent_async(scenarios, output_dir, root_dir, max_scenarios=2)
 
     result = PipelineResult(
         story_id=story_id,
