@@ -17,8 +17,10 @@ from agentic_code_testing.agents.planner_agent.typed_schemas import (
 )
 from agentic_code_testing.agents.planner_agent.write_markdown.base import BaseScenarioWriter
 from agentic_code_testing.logging.pydantic_logger import setup_logging
+from agentic_code_testing.tracing.config import configure_tracing
 
 setup_logging()
+configure_tracing()
 logger = logging.getLogger(__name__)
 
 MAX_CODE_CONTEXT_ROUNDS = 5

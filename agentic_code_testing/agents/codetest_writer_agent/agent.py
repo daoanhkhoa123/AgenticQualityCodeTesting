@@ -16,8 +16,10 @@ from agentic_code_testing.agents.codetest_writer_agent.write_one_scenario_agent.
 from agentic_code_testing.agents.codetest_writer_agent.write_report.base import BaseTestWriter
 from agentic_code_testing.agents.planner_agent.typed_schemas import Scenario
 from agentic_code_testing.logging.pydantic_logger import setup_logging
+from agentic_code_testing.tracing.config import configure_tracing
 
 setup_logging()
+configure_tracing()
 logger = logging.getLogger(__name__)
 
 DEFAULT_SCRATCH_DIR_NAME = ".codetest_writer_scratch"

@@ -5,8 +5,10 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from agentic_code_testing.agents.user_story_agent.subgraphs.parsing_graph import parsing_graph
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentContext, StoryAgentState
 from agentic_code_testing.logging.pydantic_logger import setup_logging
+from agentic_code_testing.tracing.config import configure_tracing
 
 setup_logging()
+configure_tracing()
 logger = logging.getLogger(__name__)
 
 

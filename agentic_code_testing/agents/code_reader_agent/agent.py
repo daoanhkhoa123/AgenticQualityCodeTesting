@@ -9,8 +9,10 @@ from agentic_code_testing.agents.code_reader_agent.tools.mcp_code_extractor impo
 from agentic_code_testing.agents.code_reader_agent.tools.read_file import make_read_file_tool
 from agentic_code_testing.agents.code_reader_agent.tools.search_in_files import make_search_in_files_tool
 from agentic_code_testing.logging.pydantic_logger import setup_logging
+from agentic_code_testing.tracing.config import configure_tracing
 
 setup_logging()
+configure_tracing()
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """
