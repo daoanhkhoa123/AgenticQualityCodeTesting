@@ -1,9 +1,20 @@
 import httpx
 from a2a.client import ClientConfig, create_client
-from a2a.types import Message, SendMessageRequest, TaskState
+from a2a.types import Message, Role, SendMessageRequest, TaskState
 from a2a.helpers import get_message_text, get_stream_response_text, new_message, new_text_part
 
 from agentic_code_testing.tracing.context import capture_trace_headers, inject_trace_metadata
+
+
+def _extract_text(response) -> str:
+    """Extracts text from a StreamResponse, preferring `status.message` for
+    `task`/`status_update` payloads over `get_stream_response_text`'s
+    artifacts-only handling of the `task` case (a2a-sdk gap)."""
+    if response.HasField("task") and response.task.status.HasField("message"):
+        return get_message_text(response.task.status.message)
+    if response.HasField("status_update") and response.status_update.status.HasField("message"):
+        return get_message_text(response.status_update.status.message)
+    return get_stream_response_text(response)
 
 
 async def send_and_get_text(url: str, message: Message, timeout: float) -> str:
@@ -45,8 +56,10 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
     try:
         while True:
             final = None
+            text = ""
             async for response in client.send_message(SendMessageRequest(message=message)):
                 final = response
+                text = _extract_text(response) or text
 
             if final.HasField("status_update") and final.status_update.status.state == TaskState.TASK_STATE_INPUT_REQUIRED:
                 question = get_message_text(final.status_update.status.message)
@@ -55,6 +68,7 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
                     parts=[new_text_part(answer)],
                     task_id=final.status_update.task_id,
                     context_id=final.status_update.context_id,
+                    role=Role.ROLE_USER,
                 )
                 inject_trace_metadata(message, trace_headers)
                 continue
@@ -66,10 +80,11 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
                     parts=[new_text_part(answer)],
                     task_id=final.task.id,
                     context_id=final.task.context_id,
+                    role=Role.ROLE_USER,
                 )
                 inject_trace_metadata(message, trace_headers)
                 continue
 
-            return get_stream_response_text(final)
+            return text
     finally:
         await client.close()
