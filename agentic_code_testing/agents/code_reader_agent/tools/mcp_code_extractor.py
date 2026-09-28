@@ -41,11 +41,12 @@ def _sandbox_path_arg(root_dir: Path, tool: BaseTool, path_arg: str) -> BaseTool
     async def sandboxed(**kwargs: Any) -> Any:
         raw = kwargs.get(path_arg)
         if not isinstance(raw, str) or not raw:
-            raise ValueError(f"'{path_arg}' is required and must be a non-empty string.")
-        if "://" in raw or raw.startswith("git@"):
-            raise ValueError(
-                f"'{path_arg}' must be a path under the project root, not a URL or remote ref."
+            return (
+                f"Error: '{path_arg}' is required and must be a non-empty path under the "
+                "project root. Use list_directory or search_code_tool first to find one."
             )
+        if "://" in raw or raw.startswith("git@"):
+            return f"Error: '{path_arg}' must be a path under the project root, not a URL or remote ref."
         resolved = resolve_within_root(root_dir, raw)
         kwargs[path_arg] = str(resolved)
         if tool.name == "search_code_tool":
