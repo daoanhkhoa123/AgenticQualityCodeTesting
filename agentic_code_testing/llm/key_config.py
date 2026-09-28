@@ -11,6 +11,7 @@ class _KeyConfig(BaseSettings):
     ollama_base_url: str
     ollama_model: str
     ollama_timeout_seconds: float = 60.0
+    ollama_num_ctx: int = 16384
 
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
