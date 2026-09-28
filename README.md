@@ -37,3 +37,12 @@ one layer down.
 
 - `scripts\run_all_agents.cmd` -- starts all four agents as A2A servers, one per window
 - `scripts\run_pipeline.cmd` -- runs the full pipeline end to end against a story file
+
+## Example run
+
+The pipeline was tested end to end against [CardGame](https://github.com/daoanhkhoa123/CardGame)
+as the target codebase, using
+[`user_inputs/user_stories/05_leaderboard_no_format.md`](user_inputs/user_stories/05_leaderboard_no_format.md)
+as the input user story. Generated acceptance-criteria test plans, the pytest
+tests written against it, and the resulting test report are in
+[`example_outputs`](example_outputs).
