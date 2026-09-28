@@ -1,27 +1,28 @@
-# All players have identical money values – table still renders in a stable, non-error state
+# Player with negative money (debt) sorts correctly at the bottom of the descending list
 
 - **Story ID:** 1
 - **AC ID:** AC-2
 - **Category:** edge case
-- **Priority:** P2
-- **Test Type:** e2e
+- **Priority:** P1
+- **Test Type:** integration
 
 ## Description
 
-When every player in the table has the exact same money value, the descending sort by money has no natural ordering to apply. The table must still render all players without errors, without dropping rows, and without an uncontrolled or random order that shifts on every re-render.
+Verify that when a player has a negative money value (i.e., they are in debt), the descending sort by money correctly places that player at the very bottom of the table, below all players with zero or positive balances, without causing a crash or misordering.
 
 ## Preconditions
 
-The player table component is rendered with at least 3 players, all of whom have the identical money value (e.g., every player's money = 500).
+The game/session has ended and the results table is being displayed. There are at least 3 players: Player A has 1500.00, Player B has 0.00, Player C has -250.00 (debt from a forfeit or penalty).
 
 ## Steps
 
-1. Set up a mock state where 3 players (Alice, Bob, Carol) each have money = 500.
-2. Render the player table component.
-3. Observe the order of rows in the table.
-4. Trigger a re-render (e.g., dispatch an unrelated state update or resize the container).
-5. Observe the order of rows again.
+1. Open the results/table view for the completed game session.
+2. Observe the ordering of the player rows.
+3. Confirm Player A (1500.00) is in row 1.
+4. Confirm Player B (0.00) is in row 2.
+5. Confirm Player C (-250.00) is in row 3 (last position).
+6. Verify no UI errors, blank cells, or NaN values are displayed for Player C.
 
 ## Expected Result
 
-The table displays all players (none missing, no duplicates), the sort does not throw an error, and the relative order of equal-valued players is deterministic (stable) across re-renders. No console errors or blank table.
+The player with negative money appears last in the table. Players with money 0 appear before them. The sort does not throw an error or skip the negative-valued player.

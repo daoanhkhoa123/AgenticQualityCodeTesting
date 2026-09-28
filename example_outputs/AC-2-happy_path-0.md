@@ -1,24 +1,26 @@
-# Player table is sorted in descending order by money (highest first, lowest last)
+# Player table displays players in descending order by money
 
 - **Story ID:** 1
 - **AC ID:** AC-2
 - **Category:** happy path
-- **Priority:** P1
+- **Priority:** P0
 - **Test Type:** unit
 
 ## Description
 
-When multiple players are present in the player table, the table renders them in descending order of their money value so that the richest player appears at the top and the poorest at the bottom.
+Verify that when the player table is rendered, the rows are ordered from the player with the highest money value to the player with the lowest money value.
 
 ## Steps
 
-1. Arrange: Create a player table with 5 players having distinct money values: Player A = 1200, Player B = 4500, Player C = 300, Player D = 7800, Player E = 1500
-2. Act: Render / load the player table
-3. Assert: The table row order (top to bottom) is: Player D (7800), Player B (4500), Player E (1500), Player A (1200), Player C (300)
-4. Assert: The 'money' column values in each row, read top to bottom, form a strictly non-increasing sequence
-5. Assert: The player with the highest money (7800) occupies row index 0 (first row)
-6. Assert: The player with the lowest money (300) occupies row index 4 (last row)
+1. Step 1: Ensure a dataset of 5 players exists with distinct money values: Player A ($10,000), Player B ($7,500), Player C ($3,200), Player D ($1,800), Player E ($500).
+2. Step 2: Load the player table component/view.
+3. Step 3: Observe the order of rows in the rendered table.
+4. Step 4: Assert that row 1 corresponds to Player A ($10,000).
+5. Step 5: Assert that row 2 corresponds to Player B ($7,500).
+6. Step 6: Assert that row 3 corresponds to Player C ($3,200).
+7. Step 7: Assert that row 4 corresponds to Player D ($1,800).
+8. Step 8: Assert that row 5 corresponds to Player E ($500).
 
 ## Expected Result
 
-The player table displays players in descending order by the 'money' column: highest money value first, lowest money value last.
+The first row contains the player with the highest money amount, and each subsequent row contains a player with a strictly lower (or equal) money amount, resulting in a non-increasing sequence of money values from top to bottom.

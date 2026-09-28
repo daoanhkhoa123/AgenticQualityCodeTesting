@@ -1,4 +1,4 @@
-# Player table is NOT sorted in descending order by money — displayed in ascending order (lowest first)
+# Players with identical money values maintain a stable and consistent order in the descending-sorted table
 
 - **Story ID:** 1
 - **AC ID:** AC-2
@@ -8,16 +8,19 @@
 
 ## Description
 
-A negative scenario where the player table fails to meet the sorting requirement by presenting players in ascending order of money (lowest money at the top, highest at the bottom), which is the exact opposite of the required descending order.
+Verify that when two or more players share the exact same money value, the table still displays them in a stable, deterministic order (not shuffled or undefined) while the overall table remains sorted in descending order by money.
+
+## Preconditions
+
+The players table contains at least three players, where two of them have the identical money value (e.g., Player A: $5,000, Player B: $5,000, Player C: $10,000).
 
 ## Steps
 
-1. Precondition: A player table exists with 5+ players having distinct money values (e.g., 500, 1200, 300, 4500, 800).
-2. Step 1: The player table is rendered/displayed.
-3. Step 2: Observe the order of rows from top to bottom.
-4. Step 3: Verify that the money column values are in DESCENDING order (highest → lowest).
-5. Assertion: The first row should have the HIGHEST money value (4500), and the last row should have the LOWEST money value (300).
+1. Load the players table with the following data: Player A (money: $5,000), Player B (money: $5,000), Player C (money: $10,000).
+2. Trigger the sort operation (or observe the table render, which applies the descending sort by money).
+3. Observe the order of rows in the table.
+4. Refresh or re-trigger the sort and observe the order again.
 
 ## Expected Result
 
-Per acceptance criteria, the table MUST be sorted in descending order by money (highest money first, lowest last). In this negative case, the table is in ascending order, violating the criterion.
+The table displays all players in descending order by money. Players with equal money values appear in a stable, consistent order (e.g., insertion order or a defined tiebreaker such as player name alphabetically). No error, crash, or random reordering occurs. The overall descending order is preserved for all other players.

@@ -1,29 +1,28 @@
-# Clicking the Leaderboard button from the main menu opens a pop-up window displaying a table of players
+# Clicking the Leaderboard button from the main menu opens a popup displaying a player table
 
 - **Story ID:** 1
 - **AC ID:** AC-1
 - **Category:** happy path
-- **Priority:** P0
-- **Test Type:** e2e
+- **Priority:** P1
+- **Test Type:** integration
 
 ## Description
 
-Verify the normal, expected flow: user clicks the Leaderboard button on the main menu and a pop-up window appears showing a table of players with their respective data.
+Validates the end-to-end happy path: a user on the main menu clicks the 'Leaderboard' button and is presented with a popup window containing a properly rendered table of players.
 
 ## Preconditions
 
-The application is launched and the main menu screen is fully loaded and visible. The 'Leaderboard' button is present, visible, and enabled on the main menu.
+The user is on the main menu screen and at least one player entry exists in the leaderboard data source.
 
 ## Steps
 
-1. 1. Confirm the main menu is displayed with the 'Leaderboard' button visible and clickable.
-2. 2. Click the 'Leaderboard' button on the main menu.
-3. 3. Observe that a pop-up window appears on top of the main menu.
-4. 4. Verify the pop-up window contains a table structure (header row and data rows).
-5. 5. Verify the table displays player entries (player names and associated scores/ranks).
-6. 6. Verify the main menu is still visible behind the pop-up (not replaced or hidden).
-7. 7. Optionally, close the pop-up (e.g., click a close button or press Escape) and confirm the main menu is fully visible again.
+1. Step 1: Navigate to the main menu screen where the 'Leaderboard' button is visible.
+2. Step 2: Click the 'Leaderboard' button.
+3. Step 3: Observe the UI for the appearance of a popup/modal window.
+4. Step 4: Verify the popup window contains a table element.
+5. Step 5: Verify the table is populated with player rows (name, score, or equivalent columns).
+6. Step 6: Verify the popup is displayed above/over the main menu content (overlay behavior).
 
 ## Expected Result
 
-A pop-up window opens over the main menu. The pop-up contains a visible table listing players with relevant columns (e.g., rank, player name, score). The table is populated with player data. The main menu remains visible behind the pop-up.
+A popup window opens over the main menu and displays a table with at least one column per player attribute (e.g., rank, name, score). The table is visible, readable, and populated with player entries.
