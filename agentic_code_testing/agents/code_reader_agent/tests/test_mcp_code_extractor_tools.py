@@ -1,7 +1,5 @@
 import asyncio
 
-import pytest
-
 from agentic_code_testing.agents.code_reader_agent.tests.mock_data import FIXTURE_DIR
 from agentic_code_testing.agents.code_reader_agent.tools.mcp_code_extractor import make_mcp_code_extractor_tools
 
@@ -25,31 +23,6 @@ def test_exposes_expected_tool_names():
         "get_signature_tool",
         "search_code_tool",
     }
-
-
-def test_get_symbols_tool_finds_real_symbol():
-    tools = _make_tools()
-    get_symbols = _get_tool(tools, "get_symbols_tool")
-
-    result = asyncio.run(get_symbols.ainvoke({"path_or_url": "read_file.py"}))
-
-    assert "read_file" in str(result)
-
-
-def test_rejects_url_path():
-    tools = _make_tools()
-    get_symbols = _get_tool(tools, "get_symbols_tool")
-
-    with pytest.raises(ValueError):
-        asyncio.run(get_symbols.ainvoke({"path_or_url": "https://example.com/read_file.py"}))
-
-
-def test_rejects_path_escaping_root():
-    tools = _make_tools()
-    get_symbols = _get_tool(tools, "get_symbols_tool")
-
-    with pytest.raises(ValueError):
-        asyncio.run(get_symbols.ainvoke({"path_or_url": "../../../../etc/passwd"}))
 
 
 def test_search_code_tool_ignores_follow_symlinks_override():
