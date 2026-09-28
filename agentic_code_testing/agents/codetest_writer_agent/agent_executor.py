@@ -15,6 +15,7 @@ from agentic_code_testing.agents.codetest_writer_agent.agent import iter_codetes
 from agentic_code_testing.agents.codetest_writer_agent.write_report.test_file_writer import GeneratedTestWriter
 from agentic_code_testing.agents.planner_agent.typed_schemas import Scenario
 from agentic_code_testing.llm.ollama_client import llm as default_llm
+from agentic_code_testing.tracing.context import extract_trace_headers, traced_run
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class CodetestWriterAgentExecutor(AgentExecutor):
 
     def __init__(self, llm: BaseChatModel | None = None):
         self._llm = llm or default_llm
-        self._runs: dict[str, object] = {}
+        self._runs: dict[str, tuple[object, dict[str, str]]] = {}
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         task_id = context.task_id
@@ -55,7 +56,7 @@ class CodetestWriterAgentExecutor(AgentExecutor):
             )
 
         if task_id in self._runs:
-            gen = self._runs[task_id]
+            gen, trace_headers = self._runs[task_id]
             answer = context.get_user_input()
         else:
             data_parts = get_data_parts(context.message.parts) if context.message else []
@@ -79,10 +80,12 @@ class CodetestWriterAgentExecutor(AgentExecutor):
             gen = iter_codetest_writer_agent_steps(
                 self._llm, scenarios, GeneratedTestWriter(), output_dir, root_dir, max_attempts, max_scenarios
             )
-            self._runs[task_id] = gen
+            trace_headers = extract_trace_headers(context.message)
+            self._runs[task_id] = (gen, trace_headers)
             answer = None
 
-        kind, value = await asyncio.to_thread(_advance, gen, answer)
+        with traced_run(trace_headers):
+            kind, value = await asyncio.to_thread(_advance, gen, answer)
         updater = TaskUpdater(event_queue, task_id, context.context_id)
 
         if kind == "done":

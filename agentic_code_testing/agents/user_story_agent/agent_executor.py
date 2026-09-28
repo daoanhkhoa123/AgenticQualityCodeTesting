@@ -9,6 +9,7 @@ from a2a.server.tasks import TaskUpdater
 
 from agentic_code_testing.agents.user_story_agent.agent import invoke_user_story_agent
 from agentic_code_testing.llm.ollama_client import llm as default_llm
+from agentic_code_testing.tracing.context import extract_trace_headers, traced_run
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class UserStoryAgentExecutor(AgentExecutor):
         # coerce back to int at this boundary.
         story_id = int(payload["story_id"])
 
-        result = invoke_user_story_agent(self._llm, file_path, story_id)
+        with traced_run(extract_trace_headers(context.message)):
+            result = invoke_user_story_agent(self._llm, file_path, story_id)
 
         await event_queue.enqueue_event(
             new_text_message(

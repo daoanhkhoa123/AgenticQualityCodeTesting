@@ -14,6 +14,7 @@ from agentic_code_testing.agents.planner_agent.agent import iter_planning_agent_
 from agentic_code_testing.agents.planner_agent.write_markdown.markdown_writer import MarkdownScenarioWriter
 from agentic_code_testing.agents.user_story_agent.typed_schemas import StoryAgentState
 from agentic_code_testing.llm.ollama_client import llm as default_llm
+from agentic_code_testing.tracing.context import extract_trace_headers, traced_run
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class PlannerAgentExecutor(AgentExecutor):
 
     def __init__(self, llm: BaseChatModel | None = None):
         self._llm = llm or default_llm
-        self._runs: dict[str, object] = {}
+        self._runs: dict[str, tuple[object, dict[str, str]]] = {}
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         task_id = context.task_id
@@ -53,7 +54,7 @@ class PlannerAgentExecutor(AgentExecutor):
             )
 
         if task_id in self._runs:
-            gen = self._runs[task_id]
+            gen, trace_headers = self._runs[task_id]
             answer = context.get_user_input()
         else:
             data_parts = get_data_parts(context.message.parts) if context.message else []
@@ -75,12 +76,14 @@ class PlannerAgentExecutor(AgentExecutor):
             gen = iter_planning_agent_steps(
                 self._llm, user_story, MarkdownScenarioWriter(), output_dir, root_dir, max_acs
             )
-            self._runs[task_id] = gen
+            trace_headers = extract_trace_headers(context.message)
+            self._runs[task_id] = (gen, trace_headers)
             answer = None
 
         updater = TaskUpdater(event_queue, task_id, context.context_id)
         while True:
-            kind, value = await asyncio.to_thread(_advance, gen, answer)
+            with traced_run(trace_headers):
+                kind, value = await asyncio.to_thread(_advance, gen, answer)
 
             if kind == "done":
                 del self._runs[task_id]

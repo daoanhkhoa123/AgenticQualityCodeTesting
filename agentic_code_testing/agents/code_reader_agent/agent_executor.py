@@ -10,6 +10,7 @@ from a2a.server.tasks import TaskUpdater
 
 from agentic_code_testing.agents.code_reader_agent.agent import create_code_reader_agent
 from agentic_code_testing.llm.ollama_client import llm as default_llm
+from agentic_code_testing.tracing.context import extract_trace_headers, traced_run
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class CodeReaderAgentExecutor(AgentExecutor):
             )
 
         agent = await create_code_reader_agent(self._llm, root_dir)
-        result = await agent.ainvoke({"messages": [HumanMessage(content=question)]})
+        with traced_run(extract_trace_headers(context.message)):
+            result = await agent.ainvoke({"messages": [HumanMessage(content=question)]})
         answer = result["messages"][-1].content
 
         await event_queue.enqueue_event(
