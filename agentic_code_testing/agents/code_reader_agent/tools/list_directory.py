@@ -91,7 +91,12 @@ def make_list_directory_tool(root_dir: Path):
                 the project root itself.
             depth: Maximum recursion depth. Omit for the full tree.
         """
-        target = resolve_within_root(root_dir, subdirectory)
+        try:
+            target = resolve_within_root(root_dir, subdirectory)
+        except ValueError as e:
+            return f"Error: {e}"
+        if not target.is_dir():
+            return f"Error: '{subdirectory}' is not a directory (it may be a file or not exist)."
         return print_tree(target, depth=depth, ignore=DEFAULT_IGNORE, display_root=root_dir)
 
     return list_directory

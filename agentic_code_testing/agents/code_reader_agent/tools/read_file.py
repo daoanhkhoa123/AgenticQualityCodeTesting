@@ -19,9 +19,12 @@ def make_read_file_tool(root_dir: Path):
         with a notice if it exceeds a safe size limit. Only reports what the
         file actually contains -- never execute, run, or import the file.
         """
-        target = resolve_within_root(root_dir, path)
+        try:
+            target = resolve_within_root(root_dir, path)
+        except ValueError as e:
+            return f"Error: {e}"
         if not target.is_file():
-            raise ValueError(f"'{path}' is not a file (it may be a directory or not exist).")
+            return f"Error: '{path}' is not a file (it may be a directory or not exist)."
         text = target.read_text(encoding="utf-8", errors="replace")
         if len(text) > MAX_CHARS:
             return text[:MAX_CHARS] + f"\n...[truncated, {len(text)} chars total]"

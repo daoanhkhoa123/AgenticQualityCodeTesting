@@ -47,7 +47,10 @@ def _sandbox_path_arg(root_dir: Path, tool: BaseTool, path_arg: str) -> BaseTool
             )
         if "://" in raw or raw.startswith("git@"):
             return f"Error: '{path_arg}' must be a path under the project root, not a URL or remote ref."
-        resolved = resolve_within_root(root_dir, raw)
+        try:
+            resolved = resolve_within_root(root_dir, raw)
+        except ValueError as e:
+            return f"Error: {e}"
         kwargs[path_arg] = str(resolved)
         if tool.name == "search_code_tool":
             # The schema allows follow_symlinks=True, which could point outside

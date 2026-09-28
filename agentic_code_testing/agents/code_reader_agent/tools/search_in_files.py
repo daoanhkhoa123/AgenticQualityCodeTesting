@@ -21,7 +21,12 @@ def make_search_in_files_tool(root_dir: Path):
             pattern: Regular expression to search for (case-insensitive).
             subdirectory: Path relative to the project root to search under.
         """
-        target = resolve_within_root(root_dir, subdirectory)
+        try:
+            target = resolve_within_root(root_dir, subdirectory)
+        except ValueError as e:
+            return f"Error: {e}"
+        if not target.is_dir():
+            return f"Error: '{subdirectory}' is not a directory (it may be a file or not exist)."
         regex = re.compile(pattern, re.IGNORECASE)
         hits: list[str] = []
         for file_path in target.rglob("*"):
