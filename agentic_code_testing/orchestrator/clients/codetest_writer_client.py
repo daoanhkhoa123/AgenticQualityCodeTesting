@@ -16,12 +16,14 @@ async def ask_codetest_writer_agent_async(
     output_dir: str,
     root_dir: str,
     max_attempts: int = 3,
+    max_scenarios: int | None = None,
 ) -> list[TestWriteResult]:
     payload = {
         "scenarios": [s.model_dump() for s in scenarios],
         "output_dir": output_dir,
         "root_dir": root_dir,
         "max_attempts": max_attempts,
+        "max_scenarios": max_scenarios,
     }
 
     message = new_data_message(payload)
