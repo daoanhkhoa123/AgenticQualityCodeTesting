@@ -31,13 +31,14 @@ def invoke_codetest_writer_agent(
     output_dir,
     root_dir: str,
     max_attempts: int = 3,
+    max_scenarios: Optional[int] = None,
     code_context_resolver: Optional[Callable[[str], str]] = None,
 ) -> list[TestWriteResult]:
     """Blocking wrapper over `iter_codetest_writer_agent_steps` for callers that
     don't need to answer code-context questions across a network boundary
     (tests, scripts) -- resolves each question in-process via
     `code_context_resolver`."""
-    gen = iter_codetest_writer_agent_steps(llm, scenarios, file_writer, output_dir, root_dir, max_attempts)
+    gen = iter_codetest_writer_agent_steps(llm, scenarios, file_writer, output_dir, root_dir, max_attempts, max_scenarios)
     answer = None
     while True:
         try:
@@ -54,12 +55,19 @@ def iter_codetest_writer_agent_steps(
     output_dir,
     root_dir: str,
     max_attempts: int = 3,
+    max_scenarios: Optional[int] = None,
 ) -> Generator[str, str, list[TestWriteResult]]:
     """Generator form of `invoke_codetest_writer_agent`: yields each
     code-context question as it comes up and expects the answer sent back via
     `.send()`, so a caller spanning multiple requests (an A2A executor) can
     pause and resume this exact point instead of resolving it in-process.
-    Returns the final test-write-result list via `StopIteration.value`."""
+    Returns the final test-write-result list via `StopIteration.value`.
+
+    `max_scenarios` caps how many scenarios are drafted (to bound token/time
+    cost); pass None for no limit."""
+    if max_scenarios is not None:
+        scenarios = scenarios[:max_scenarios]
+
     logger.info("Starting codetest writer agent for %d scenario(s)", len(scenarios))
 
     clear_stale_scratch(Path(root_dir).resolve(), DEFAULT_SCRATCH_DIR_NAME)

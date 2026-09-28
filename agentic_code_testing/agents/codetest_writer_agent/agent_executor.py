@@ -32,7 +32,7 @@ def _advance(gen, answer):
 class CodetestWriterAgentExecutor(AgentExecutor):
     """Exposes invoke_codetest_writer_agent over the A2A protocol.
 
-    scenarios/output_dir/root_dir/max_attempts come from the incoming
+    scenarios/output_dir/root_dir/max_attempts/max_scenarios come from the incoming
     message's data Part. A code-context question is surfaced as an A2A
     input-required task state instead of resolved internally -- whoever
     calls this agent (the orchestrator) answers it (via code_reader_agent)
@@ -72,9 +72,12 @@ class CodetestWriterAgentExecutor(AgentExecutor):
             # Data Parts round-trip JSON numbers as floats (protobuf Struct), so
             # coerce back to int at this boundary.
             max_attempts = int(payload.get("max_attempts", 3))
+            max_scenarios = payload.get("max_scenarios")
+            if max_scenarios is not None:
+                max_scenarios = int(max_scenarios)
 
             gen = iter_codetest_writer_agent_steps(
-                self._llm, scenarios, GeneratedTestWriter(), output_dir, root_dir, max_attempts
+                self._llm, scenarios, GeneratedTestWriter(), output_dir, root_dir, max_attempts, max_scenarios
             )
             self._runs[task_id] = gen
             answer = None
