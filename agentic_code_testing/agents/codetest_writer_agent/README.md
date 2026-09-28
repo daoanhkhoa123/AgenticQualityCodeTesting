@@ -10,6 +10,11 @@ that graph once, loops it over the scenario list, and handles the
 interrupt/resume plumbing for code-context questions; `agent_executor.py`
 exposes that loop over A2A.
 
+Graph (per scenario, see
+[`write_one_scenario_agent`](write_one_scenario_agent/README.md)):
+
+![codetest_writer_once_scenario](../../../docs/codetest_writer_once_scenario.png)
+
 The graph never references `code_reader_agent` directly -- if a draft needs
 more information about the target codebase, it asks for it by suspending
 itself, and `agent.py` exposes two ways to drive it end-to-end:
