@@ -3,6 +3,8 @@ from a2a.client import ClientConfig, create_client
 from a2a.types import Message, SendMessageRequest, TaskState
 from a2a.helpers import get_message_text, get_stream_response_text, new_message, new_text_part
 
+from agentic_code_testing.tracing.context import capture_trace_headers, inject_trace_metadata
+
 
 async def send_and_get_text(url: str, message: Message, timeout: float) -> str:
     """Sends a single message to an agent with no code-context interrupt and
@@ -14,6 +16,7 @@ async def send_and_get_text(url: str, message: Message, timeout: float) -> str:
     the answer. Agents that can pause mid-task (planner_agent,
     codetest_writer_agent) must use `send_with_code_context` instead.
     """
+    inject_trace_metadata(message, capture_trace_headers())
     httpx_client = httpx.AsyncClient(timeout=timeout)
     client = await create_client(url, ClientConfig(streaming=False, httpx_client=httpx_client))
     try:
@@ -35,6 +38,8 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
     """
     from agentic_code_testing.orchestrator.clients.code_reader_client import ask_code_reader_async
 
+    trace_headers = capture_trace_headers()
+    inject_trace_metadata(message, trace_headers)
     httpx_client = httpx.AsyncClient(timeout=timeout)
     client = await create_client(url, ClientConfig(streaming=True, httpx_client=httpx_client))
     try:
@@ -51,6 +56,7 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
                     task_id=final.status_update.task_id,
                     context_id=final.status_update.context_id,
                 )
+                inject_trace_metadata(message, trace_headers)
                 continue
 
             if final.HasField("task") and final.task.status.state == TaskState.TASK_STATE_INPUT_REQUIRED:
@@ -61,6 +67,7 @@ async def send_with_code_context(url: str, message: Message, root_dir: str, time
                     task_id=final.task.id,
                     context_id=final.task.context_id,
                 )
+                inject_trace_metadata(message, trace_headers)
                 continue
 
             return get_stream_response_text(final)
