@@ -12,6 +12,11 @@ class _KeyConfig(BaseSettings):
     ollama_model: str
     ollama_timeout_seconds: float = 60.0
 
+    langsmith_tracing: bool = False
+    langsmith_api_key: str | None = None
+    langsmith_project: str = "agentic-code-testing"
+    langsmith_endpoint: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,
         env_file_encoding=_ENV_FILE_ENCODING,
